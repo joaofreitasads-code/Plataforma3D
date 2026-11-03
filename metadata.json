@@ -1,0 +1,6 @@
+{
+  "name": "Central 3D - Área de Membros",
+  "description": "Área de membros Central 3D: catálogo de modelos STL, 3MF e RAR prontos para impressão 3D com calculadora de lucro e download direto.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
