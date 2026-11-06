@@ -1,45 +1,69 @@
 @import "tailwindcss";
 
-:root {
-  --bg: #0c0e11;
-  --panel: #15181d;
-  --panel-2: #1b1f25;
-  --panel-3: #222730;
-  --line: #262b33;
-  --fg: #f2f3f5;
-  --muted: #9aa1ac;
-  --accent: #ff6a1f;
-  --accent-2: #ff3d2e;
-  --danger: #e5132b;
-  --good: #2fbf8f;
-  --violet: #5b5cf0;
-  --font-display: "Sora", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-  --font-body: "Manrope", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+@theme {
+  --font-sans: 'Montserrat', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --font-montserrat: 'Montserrat', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
 }
 
-body {
-  font-family: var(--font-body);
-  background-color: var(--bg);
-  color: var(--fg);
-  overflow-x: hidden;
+@layer base {
+  html, body {
+    font-family: 'Montserrat', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    background-color: #0b0c0e; /* Fundo Preto Profundo no Tema Preto & Laranja */
+    color: #FFFFFF;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+    letter-spacing: -0.01em;
+  }
+
+  ::selection {
+    background-color: #ff6600;
+    color: #ffffff;
+  }
+
+  /* Letras da área de membros na fonte Montserrat: bem visíveis e fáceis de ler */
+  body, p, span, div, a, button, input, select, textarea, label, li, td, th {
+    font-family: 'Montserrat', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  }
+
+  /* Títulos com excelente peso, contraste e legibilidade */
+  h1, h2, h3, h4, h5, h6, strong, b {
+    font-family: 'Montserrat', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    font-weight: 800;
+    letter-spacing: -0.015em;
+  }
+
+  button, input, select, textarea {
+    font-family: 'Montserrat', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  }
 }
 
-h1, h2, h3, h4, .font-display {
-  font-family: var(--font-display);
+@layer utilities {
+  .font-montserrat {
+    font-family: 'Montserrat', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  }
+  .font-cinzel {
+    font-family: 'Cinzel', serif, ui-serif, Georgia;
+    font-weight: 800;
+  }
+  .font-mono {
+    font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    font-weight: 600;
+  }
 }
 
-/* Custom scrollbars */
+/* Scrollbar no estilo preto e laranja */
 ::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
+  width: 7px;
+  height: 7px;
 }
 ::-webkit-scrollbar-track {
-  background: #0c0e11;
+  background: #0b0c0e;
 }
 ::-webkit-scrollbar-thumb {
-  background: #262b33;
-  border-radius: 9999px;
+  background: #262933;
+  border-radius: 4px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #3b424f;
+  background: #ff6600;
 }
