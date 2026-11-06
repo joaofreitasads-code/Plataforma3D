@@ -24,25 +24,28 @@ export const ModelDetailModal: React.FC<ModelDetailModalProps> = ({
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
   const [imageError, setImageError] = useState(false);
   const [fallbackAttempt, setFallbackAttempt] = useState(0);
-  const [isMainLoaded, setIsMainLoaded] = useState(false);
+  const [isMainLoaded, setIsMainLoaded] = useState(true);
+  const [bgSrc, setBgSrc] = useState('/model_card_bg.webp');
 
   // Strictly deduplicate all images for this model without repetition
   const allImages = React.useMemo(() => {
     if (!model) return [];
-    const set = new Set<string>();
-    if (model.images && model.images.length > 0) {
-      model.images.forEach(img => set.add(img));
+    const list: string[] = [];
+    if (model.imageUrl && !list.includes(model.imageUrl)) list.push(model.imageUrl);
+    if (model.thumbnailUrl && !list.includes(model.thumbnailUrl)) list.push(model.thumbnailUrl);
+    if (model.images && Array.isArray(model.images)) {
+      model.images.forEach(img => {
+        if (img && !list.includes(img)) list.push(img);
+      });
     }
-    if (model.imageUrl) set.add(model.imageUrl);
-    if (model.thumbnailUrl) set.add(model.thumbnailUrl);
-    return Array.from(set);
+    return list;
   }, [model]);
 
   useEffect(() => {
     setImageError(false);
     setFallbackAttempt(0);
     setSelectedImageIndex(0);
-    setIsMainLoaded(false);
+    setIsMainLoaded(true);
   }, [model]);
 
   if (!isOpen || !model) return null;
@@ -56,6 +59,19 @@ export const ModelDetailModal: React.FC<ModelDetailModalProps> = ({
 
   const currentSrc = getImageSource();
   const hasPhoto = Boolean(currentSrc && !imageError);
+
+  const handleImageError = () => {
+    if (fallbackAttempt < 3) {
+      setFallbackAttempt(prev => prev + 1);
+      return;
+    }
+    if (allImages.length > 1 && selectedImageIndex < allImages.length - 1) {
+      setFallbackAttempt(0);
+      setSelectedImageIndex(prev => prev + 1);
+      return;
+    }
+    setImageError(true);
+  };
 
   const handlePrevImage = () => {
     setImageError(false);
@@ -139,7 +155,12 @@ export const ModelDetailModal: React.FC<ModelDetailModalProps> = ({
               <div className="w-full aspect-square rounded-2xl overflow-hidden border border-[#262933] bg-[#0d0e12] flex items-center justify-center relative group/modalImage shadow-inner">
                 {/* Photorealistic Studio Wooden Table Background */}
                 <img
-                  src="/model_card_bg.webp"
+                  src={bgSrc}
+                  onError={() => {
+                    if (bgSrc !== 'https://i.imgur.com/dxozWx0.png') {
+                      setBgSrc('https://i.imgur.com/dxozWx0.png');
+                    }
+                  }}
                   alt=""
                   aria-hidden="true"
                   className="absolute inset-0 w-full h-full object-cover object-center pointer-events-none select-none z-0"
@@ -147,12 +168,6 @@ export const ModelDetailModal: React.FC<ModelDetailModalProps> = ({
 
                 {/* Subtle spotlight glow behind model */}
                 <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_rgba(255,255,255,0.08)_0%,_transparent_75%)] pointer-events-none z-[1]" />
-
-                {hasPhoto && !isMainLoaded && (
-                  <div className="absolute inset-0 bg-black/40 backdrop-blur-[2px] flex items-center justify-center z-[2]">
-                    <Box className="w-12 h-12 text-neutral-400 animate-pulse" />
-                  </div>
-                )}
 
                 {hasPhoto ? (
                   <img
@@ -172,19 +187,11 @@ export const ModelDetailModal: React.FC<ModelDetailModalProps> = ({
                       setIsMainLoaded(true);
                     }}
                     className={`w-full h-full ${
-                      currentSrc.endsWith('.svg') || currentSrc.includes('pocket-pals') || currentSrc.toLowerCase().includes('.png') || currentSrc.includes('imgur.com')
+                      currentSrc.endsWith('.svg') || currentSrc.includes('pocket-pals') || currentSrc.includes('canecas_times') || currentSrc.includes('front_models') || currentSrc.toLowerCase().includes('.png') || currentSrc.includes('imgur.com')
                         ? 'object-contain p-4'
                         : 'object-cover'
-                    } object-center relative z-10 drop-shadow-[0_12px_28px_rgba(0,0,0,0.7)] transition-opacity duration-200 ${
-                      isMainLoaded ? 'opacity-100' : 'opacity-0'
-                    }`}
-                    onError={() => {
-                      if (fallbackAttempt < 3) {
-                        setFallbackAttempt(prev => prev + 1);
-                      } else {
-                        setImageError(true);
-                      }
-                    }}
+                    } object-center relative z-10 drop-shadow-[0_12px_28px_rgba(0,0,0,0.7)]`}
+                    onError={handleImageError}
                   />
                 ) : (
                   <div className="relative z-10 flex flex-col items-center justify-center gap-3 text-neutral-300 p-6 text-center max-w-[85%] bg-black/60 backdrop-blur-md rounded-2xl border border-white/10 shadow-xl">

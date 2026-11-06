@@ -121,16 +121,6 @@ export const MembersArea: React.FC<MembersAreaProps> = ({ currentUser, onLogout 
     return ALL_MODELS;
   }, []);
 
-  // Proactive background preloading of image assets for zero delay
-  useEffect(() => {
-    if (modelsList.length > 0) {
-      const topUrls = modelsList.slice(0, 35).map(m => m.thumbnailUrl || m.imageUrl || '').filter(Boolean);
-      preloadPriorityImages(topUrls);
-
-      const restUrls = modelsList.slice(35, 100).map(m => m.thumbnailUrl || m.imageUrl || '').filter(Boolean);
-      preloadImageBatch(restUrls, 65);
-    }
-  }, [modelsList]);
 
   // Filter models
   const filteredModels = useMemo(() => {

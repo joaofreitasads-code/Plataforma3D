@@ -173,20 +173,6 @@ export const AllFilesTab: React.FC<AllFilesTabProps> = ({
     ];
   }, []);
 
-  // Preload first batch of images for instant visual display
-  useEffect(() => {
-    if (displayedModels.length > 0) {
-      const allUrls = displayedModels.map(m => {
-        const raw = m.thumbnailUrl || (m.images && m.images[0]) || m.imageUrl;
-        return getOptimizedCardImageUrl(raw, 0, 220);
-      }).filter(Boolean);
-
-      preloadPriorityImages(allUrls.slice(0, 48));
-      if (allUrls.length > 48) {
-        preloadImageBatch(allUrls.slice(48, 180), 132);
-      }
-    }
-  }, [displayedModels]);
 
   const handleSelectSection = (catId: string) => {
     setSelectedCategory(catId);

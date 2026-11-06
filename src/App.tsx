@@ -32,43 +32,11 @@ export default function App() {
   });
 
   // Background preload: while the user is viewing/typing on the login screen,
-  // silently prefetch the heavy MembersArea chunk and high-priority WebP images into browser cache so login is instant!
+  // silently prefetch the MembersArea component chunk for instant transition after login
   useEffect(() => {
     if (!currentUser) {
       const preload = () => {
-        import('./components/MembersArea');
-        // Pre-warm featured top WebP images into browser cache silently
-        const keyImages = [
-          '/product_checkout.webp',
-          '/pocket-pals/cao.webp',
-          '/pocket-pals/capivara.webp',
-          '/pocket-pals/coelho.webp',
-          '/pocket-pals/gato.webp',
-          '/pocket-pals/girafa.webp',
-          '/pocket-pals/papagaio.webp',
-          '/pocket-pals/raposa.webp',
-          '/pocket-pals/tartaruga.webp',
-          '/pocket-pals/vaca.webp',
-          '/canecas-gamer/playstation.webp',
-          '/canecas-gamer/mortal_kombat.webp',
-          '/canecas-gamer/call_of_duty.webp',
-          '/canecas-gamer/gta.webp',
-          '/canecas-gamer/minecraft.webp',
-          'https://lh3.googleusercontent.com/d/1vrYctOYYGKLVtcurtEG5GL_S1rcUWFgv=s220-rw',
-          'https://lh3.googleusercontent.com/d/1RL6FU0qLqsAYjEMMX3DSKS8HNHzGuA1r=s220-rw',
-          'https://lh3.googleusercontent.com/d/1oZGQMdlviAQ-rinamSPXqcjctkNlTgmt=s220-rw',
-          'https://lh3.googleusercontent.com/d/1X120q3Z6e3BRYCYvI_XnnnKHhl7h0qop=s220-rw',
-          'https://lh3.googleusercontent.com/d/1dukxEHlYOyOvwGJmsKoTr0lxtYXFWf5w=s220-rw',
-          'https://lh3.googleusercontent.com/d/1i_tsKbThJfNOieRfeAty1wxcsAwOaRS_=s220-rw',
-          '/estadios/corinthians.webp',
-          '/estadios/flamengo.webp',
-          '/canecas/corinthians.webp'
-        ];
-        keyImages.forEach(src => {
-          const img = new Image();
-          img.decoding = 'async';
-          img.src = src;
-        });
+        import('./components/MembersArea').catch(() => {});
       };
 
       if (typeof window !== 'undefined' && 'requestIdleCallback' in window) {

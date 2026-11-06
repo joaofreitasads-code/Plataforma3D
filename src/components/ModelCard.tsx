@@ -22,25 +22,28 @@ const ModelCardComponent: React.FC<ModelCardProps> = ({
   priority = false,
   orangeVariant = false
 }) => {
-  // Deduplicate all images strictly without repetition
+  // Deduplicate and aggregate all valid image sources for resilient multi-source fallback
   const allImages = React.useMemo(() => {
-    return Array.from(
-      new Set(
-        model.images && model.images.length > 0
-          ? model.images
-          : ([model.imageUrl, model.thumbnailUrl].filter(Boolean) as string[])
-      )
-    );
+    const list: string[] = [];
+    if (model.thumbnailUrl && !list.includes(model.thumbnailUrl)) list.push(model.thumbnailUrl);
+    if (model.imageUrl && !list.includes(model.imageUrl)) list.push(model.imageUrl);
+    if (model.images && Array.isArray(model.images)) {
+      model.images.forEach(img => {
+        if (img && !list.includes(img)) list.push(img);
+      });
+    }
+    return list.length > 0 ? list : [model.thumbnailUrl || model.imageUrl || ''].filter(Boolean);
   }, [model]);
 
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [imageError, setImageError] = useState(false);
   const [fallbackAttempt, setFallbackAttempt] = useState(0);
   const [copied, setCopied] = useState(false);
+  const [bgSrc, setBgSrc] = useState('/model_card_bg.webp');
 
-  const rawSrc = currentImageIndex === 0
-    ? (model.thumbnailUrl || (allImages.length > 0 ? allImages[0] : model.imageUrl))
-    : (allImages[currentImageIndex] || model.imageUrl || model.thumbnailUrl);
+  const rawSrc = currentImageIndex < allImages.length
+    ? allImages[currentImageIndex]
+    : (model.thumbnailUrl || model.imageUrl || '');
   
   const currentSrc = React.useMemo(() => {
     return getOptimizedCardImageUrl(rawSrc, fallbackAttempt, 240);
@@ -66,6 +69,23 @@ const ModelCardComponent: React.FC<ModelCardProps> = ({
     }
     setImageError(false);
   }, [currentSrc]);
+
+  // Multi-tier resilient error recovery: tries alternative CDN resizers, then next image URL in gallery
+  const handleImageError = () => {
+    // 1. If it's a Drive/CDN image, try next fallback tier (0 to 4)
+    if (fallbackAttempt < 4) {
+      setFallbackAttempt(prev => prev + 1);
+      return;
+    }
+    // 2. If all format attempts of the current image failed, try next image candidate in allImages
+    if (currentImageIndex < allImages.length - 1) {
+      setFallbackAttempt(0);
+      setCurrentImageIndex(prev => prev + 1);
+      return;
+    }
+    // 3. All sources exhausted
+    setImageError(true);
+  };
 
   const handlePrevImage = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -106,6 +126,9 @@ const ModelCardComponent: React.FC<ModelCardProps> = ({
     currentSrc && (
       currentSrc.endsWith('.svg') ||
       currentSrc.includes('pocket-pals') ||
+      currentSrc.includes('canecas_times') ||
+      currentSrc.includes('front_models') ||
+      currentSrc.includes('chaveiros') ||
       currentSrc.toLowerCase().includes('.png') ||
       currentSrc.includes('imgur.com')
     )
@@ -125,9 +148,14 @@ const ModelCardComponent: React.FC<ModelCardProps> = ({
     >
       {/* Top Image Container matching new_ref.png with realistic wooden table studio background */}
       <div className="w-full aspect-square relative overflow-hidden bg-[#0d0f14] flex items-center justify-center group/image select-none">
-        {/* Photorealistic Studio Wooden Table Background (User Template) */}
+        {/* Photorealistic Studio Wooden Table Background (User Template) with remote CDN fallback */}
         <img
-          src="/model_card_bg.webp"
+          src={bgSrc}
+          onError={() => {
+            if (bgSrc !== 'https://i.imgur.com/dxozWx0.png') {
+              setBgSrc('https://i.imgur.com/dxozWx0.png');
+            }
+          }}
           alt=""
           aria-hidden="true"
           className="absolute inset-0 w-full h-full object-cover object-center pointer-events-none select-none z-0 transition-transform duration-500 group-hover:scale-105"
@@ -148,13 +176,7 @@ const ModelCardComponent: React.FC<ModelCardProps> = ({
               markImageCached(currentSrc);
               setIsLoaded(true);
             }}
-            onError={() => {
-              if (fallbackAttempt < 3) {
-                setFallbackAttempt(prev => prev + 1);
-              } else {
-                setImageError(true);
-              }
-            }}
+            onError={handleImageError}
             className={
               isCutoutOrSvg
                 ? "w-full h-full object-contain p-2 relative z-10 transition-transform duration-300 group-hover:scale-105 drop-shadow-[0_10px_20px_rgba(0,0,0,0.65)]"

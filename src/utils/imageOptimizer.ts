@@ -101,13 +101,16 @@ export function getOptimizedCardImageUrl(
       // Fallback 1: Standard compressed JPEG on Google Edge (~14KB-18KB)
       return `https://lh3.googleusercontent.com/d/${id}=s${size}`;
     case 2:
-      // Fallback 2: Direct LH3 stream
-      return `https://lh3.googleusercontent.com/d/${id}`;
-    case 3:
-      // Fallback 3: Drive thumbnail edge
+      // Fallback 2: Google Drive native thumbnail endpoint
       return `https://drive.google.com/thumbnail?id=${id}&sz=w${size}`;
+    case 3:
+      // Fallback 3: Direct LH3 stream
+      return `https://lh3.googleusercontent.com/d/${id}`;
+    case 4:
+      // Fallback 4: Untrusted content direct stream
+      return `https://drive.usercontent.google.com/download?id=${id}&export=view`;
     default:
-      return `https://lh3.googleusercontent.com/d/${id}=s${size}-rw`;
+      return `https://lh3.googleusercontent.com/d/${id}`;
   }
 }
 
@@ -144,16 +147,17 @@ export function getOptimizedModalImageUrl(
       // High-res JPEG fallback
       return `https://lh3.googleusercontent.com/d/${id}=s640`;
     case 2:
+      // Drive thumbnail endpoint
+      return `https://drive.google.com/thumbnail?id=${id}&sz=w700`;
+    case 3:
       // Direct raw
       return `https://lh3.googleusercontent.com/d/${id}`;
-    case 3:
-      return `https://drive.google.com/thumbnail?id=${id}&sz=w700`;
     default:
-      return `https://lh3.googleusercontent.com/d/${id}=s640-rw`;
+      return `https://lh3.googleusercontent.com/d/${id}`;
   }
 }
 
-// In-memory decoded image object cache (keeps hot bitmaps in GPU/compositor memory for 0ms paint)
+// In-memory decoded image object cache
 const imageBitmaps = new Map<string, HTMLImageElement>();
 
 /**
@@ -164,78 +168,16 @@ export function isImageCached(url: string): boolean {
 }
 
 /**
- * Preloads the highest priority images (first visible viewport fold) immediately with high fetch priority
+ * Safe, non-flooding preloader: lets native HTML <img> handle viewport priority
  */
-export function preloadPriorityImages(urls: string[]): void {
-  if (typeof window === 'undefined') return;
-  const valid = urls.filter(u => u && !imageBitmaps.has(u)).slice(0, 48);
-  valid.forEach(url => {
-    const img = new Image();
-    img.referrerPolicy = 'no-referrer';
-    (img as unknown as { fetchPriority?: string }).fetchPriority = 'high';
-    img.decoding = 'async';
-    img.onload = () => {
-      markImageCached(url);
-      imageBitmaps.set(url, img);
-      if (imageBitmaps.size > 200) {
-        const firstKey = imageBitmaps.keys().next().value;
-        if (firstKey) imageBitmaps.delete(firstKey);
-      }
-      if ('decode' in img) img.decode().catch(() => {});
-    };
-    img.src = url;
-  });
+export function preloadPriorityImages(_urls: string[]): void {
+  // Rely on native browser img loading="lazy" / loading="eager" to prevent rate-limiting
 }
 
 /**
- * Preload an array of image URLs silently in the background using micro-batched idle execution
+ * Safe idle preloader: prevents flooding the client network or triggering CDN limits
  */
-export function preloadImageBatch(urls: string[], limit: number = 150): void {
-  if (typeof window === 'undefined') return;
-
-  const toPreload = urls.filter(u => u && !imageBitmaps.has(u)).slice(0, limit);
-  if (toPreload.length === 0) return;
-
-  const runBatch = () => {
-    let idx = 0;
-    const chunk = 16;
-    const nextChunk = () => {
-      if (idx >= toPreload.length) return;
-      const slice = toPreload.slice(idx, idx + chunk);
-      idx += chunk;
-
-      slice.forEach(url => {
-        const img = new Image();
-        img.referrerPolicy = 'no-referrer';
-        img.decoding = 'async';
-        img.onload = () => {
-          loadedImageUrls.add(url);
-          imageBitmaps.set(url, img);
-          if (imageBitmaps.size > 200) {
-            const firstKey = imageBitmaps.keys().next().value;
-            if (firstKey) imageBitmaps.delete(firstKey);
-          }
-          if ('decode' in img) img.decode().catch(() => {});
-        };
-        img.src = url;
-      });
-
-      if (idx < toPreload.length) {
-        if ('requestIdleCallback' in window) {
-          (window as unknown as { requestIdleCallback: (fn: () => void, opts: { timeout: number }) => void })
-            .requestIdleCallback(nextChunk, { timeout: 120 });
-        } else {
-          setTimeout(nextChunk, 15);
-        }
-      }
-    };
-    nextChunk();
-  };
-
-  if ('requestIdleCallback' in window) {
-    (window as unknown as { requestIdleCallback: (fn: () => void, opts: { timeout: number }) => void })
-      .requestIdleCallback(runBatch, { timeout: 200 });
-  } else {
-    setTimeout(runBatch, 20);
-  }
+export function preloadImageBatch(_urls: string[], _limit: number = 150): void {
+  // Rely on native browser img loading="lazy" / loading="eager" to prevent rate-limiting
 }
+

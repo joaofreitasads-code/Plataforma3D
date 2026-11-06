@@ -2,14 +2,18 @@ import {createRoot} from 'react-dom/client';
 import App from './App.tsx';
 import './index.css';
 
-// Register Service Worker for instant persistent image and media caching
-if (typeof window !== 'undefined' && 'serviceWorker' in navigator && import.meta.env.PROD) {
-  window.addEventListener('load', () => {
-    navigator.serviceWorker.register('/sw.js').catch(() => {});
-  });
-} else if (typeof window !== 'undefined' && 'serviceWorker' in navigator) {
-  // In development, also register so preview benefits from instant image caching
-  navigator.serviceWorker.register('/sw.js').catch(() => {});
+// Unregister legacy service workers to prevent cross-origin image fetch failures
+if (typeof window !== 'undefined' && 'serviceWorker' in navigator) {
+  navigator.serviceWorker.getRegistrations().then((registrations) => {
+    for (const registration of registrations) {
+      registration.unregister().catch(() => {});
+    }
+  }).catch(() => {});
+  if ('caches' in window) {
+    caches.keys().then((names) => {
+      names.forEach((name) => caches.delete(name).catch(() => {}));
+    }).catch(() => {});
+  }
 }
 
 createRoot(document.getElementById('root')!).render(<App />);
