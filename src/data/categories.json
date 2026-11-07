@@ -1,0 +1,303 @@
+[
+  {
+    "id": "street-fighter",
+    "title": "STREET FIGHTER",
+    "image": "https://lh3.googleusercontent.com/d/1vrYctOYYGKLVtcurtEG5GL_S1rcUWFgv=s640-rw",
+    "filterQuery": "street fighter ryu ken chun-li chun li akuma bison guile vega sagat blanka",
+    "count": 9
+  },
+  {
+    "id": "mortal-kombat",
+    "title": "MORTAL KOMBAT",
+    "image": "https://lh3.googleusercontent.com/d/1iobUId4HNPpHQKDMtVTksE-VEWGh2ZHy=s600",
+    "filterQuery": "mortal kombat sub-zero sub zero scorpion raiden liu kang noob saibot fatality",
+    "count": 6
+  },
+  {
+    "id": "sonic",
+    "title": "SONIC",
+    "image": "https://lh3.googleusercontent.com/d/1U2gs8uDv8s-Ue2BJ8AJa23XpLzT5ee7j=s600",
+    "filterQuery": "sonic knuckles tails amy rose shadow sega dr eggman",
+    "count": 7
+  },
+  {
+    "id": "herois",
+    "title": "HERÓIS",
+    "image": "https://lh3.googleusercontent.com/d/1SrxHAmFhpQhkyCdULg9e-xA4XcFqa30U=s600",
+    "filterQuery": "heróis heroi herois batman superman wolverine thor homem de ferro capitão américa marvel dc pantera negra cavaleiro da lua",
+    "count": 2
+  },
+  {
+    "id": "terror",
+    "title": "TERROR",
+    "image": "https://lh3.googleusercontent.com/d/1MpW07_kOd7BxkQmpOEKxAfOYXF0AhGky=s600",
+    "filterQuery": "terror jason vorhees freddy krueger chucky michael myers ghostface pennywise leatherface panico xenomorfo",
+    "count": 17
+  },
+  {
+    "id": "pokemon",
+    "title": "POKÉMON",
+    "image": "https://lh3.googleusercontent.com/u/0/d/1IG6GXrfqwI8sJaCRm2CxhWSUQsYUemsp",
+    "filterQuery": "pokémon pokemon pikachu charizard bulbasaur squirtle mewtwo pokebola ivysaur venusaur raichu",
+    "count": 7
+  },
+  {
+    "id": "bichinhos-fofos",
+    "title": "BICHINHOS FOFOS",
+    "image": "https://lh3.googleusercontent.com/d/11DG60AQLY9VtnrSFycg9QqRHWapxr-vF=s600",
+    "filterQuery": "fofo articulado pet bichinho cachorro gato panda coelho urso girafa pocket pal",
+    "count": 7
+  },
+  {
+    "id": "desenhos-e-animacoes",
+    "title": "DESENHOS E ANIMAÇÕES",
+    "image": "https://lh3.googleusercontent.com/d/16mImFuEYFQZ9eUUxZGexx0OTY276I0bD=s600",
+    "filterQuery": "desenho animação tico teco cartoon animado disney pixar looney tunes hanna barbera simpsons",
+    "count": 9
+  },
+  {
+    "id": "disney",
+    "title": "DISNEY",
+    "image": "https://lh3.googleusercontent.com/d/1F5cffZwia4Dy7KiJyKNVVPMHDfTEnnHS=s600",
+    "filterQuery": "disney mickey minnie donald pateta pluto stitch rei leão",
+    "count": 12
+  },
+  {
+    "id": "looney-tunes",
+    "title": "LOONEY TUNES",
+    "image": "https://lh3.googleusercontent.com/d/1fB12bHVrc6tN-sQrZip9sA-ynaq5aOsY=s640-rw",
+    "filterQuery": "looney tunes pernalonga bugs bunny patolino taz frajola piu-piu coelho easter bunny",
+    "count": 6
+  },
+  {
+    "id": "hanna-barbera",
+    "title": "HANNA-BARBERA",
+    "image": "https://lh3.googleusercontent.com/d/11DG60AQLY9VtnrSFycg9QqRHWapxr-vF=s600",
+    "filterQuery": "hanna barbera flintstones scooby doo jetsons tom jerry ze colmeia corrida maluca dick vigarista",
+    "count": 9
+  },
+  {
+    "id": "os-simpsons",
+    "title": "OS SIMPSONS",
+    "image": "https://lh3.googleusercontent.com/d/1fB12bHVrc6tN-sQrZip9sA-ynaq5aOsY=s640-rw",
+    "filterQuery": "simpsons homer bart marge lisa springfield duff",
+    "count": 4
+  },
+  {
+    "id": "desenhos-classicos",
+    "title": "DESENHOS CLÁSSICOS",
+    "image": "https://lh3.googleusercontent.com/d/1oRcnIWBFbx9EyZM8WiSSgkA8Pb8jUHB7=s600",
+    "filterQuery": "desenhos clássicos he-man thundercats lion-o caverna do dragao pica-pau popeye",
+    "count": 15
+  },
+  {
+    "id": "tim-burton",
+    "title": "TIM BURTON",
+    "image": "https://lh3.googleusercontent.com/d/1wEg6H1mVWOtylLtqFPY16hmGoT_UEkUM=s600",
+    "filterQuery": "tim burton jack estranho mundo coraline noiva cadáver edward mãos tesoura beetlejuice pyramid head",
+    "count": 5
+  },
+  {
+    "id": "yu-gi-oh",
+    "title": "YU-GI-OH!",
+    "image": "https://lh3.googleusercontent.com/d/16VBsMy_8NSFfWfj7oRjky_YVGraXHJic=s640-rw",
+    "filterQuery": "yu-gi-oh yugioh yugi kaiba mago negro dragão olhos azuis exodia pot of greed",
+    "count": 4
+  },
+  {
+    "id": "anime",
+    "title": "ANIME",
+    "image": "https://lh3.googleusercontent.com/d/108-d_ARKvopN0xHjg3e2xbhfjiBP3c75=s600",
+    "filterQuery": "anime luffy zoro one piece goku vegeta broly vegito gogeta dragon ball naruto sasuke jujutsu demon slayer",
+    "count": 3
+  },
+  {
+    "id": "pokebolas-pokemon",
+    "title": "POKÉBOLAS POKÉMON",
+    "image": "https://lh3.googleusercontent.com/d/1PF7SON0d9IEFHiu0bqGJ_pDbgDmxRoAm=s640-rw",
+    "filterQuery": "pokébola pokebola pokémon articulada superball ultraball masterball ivysaur raichu",
+    "count": 64
+  },
+  {
+    "id": "natal",
+    "title": "NATAL",
+    "image": "https://lh3.googleusercontent.com/d/1gQg05kdHXUTt0Al0dD0RsuOaZaWOfnbL",
+    "filterQuery": "natal papai noel árvore natalina arvore boneco de neve gengibre presépio natal 3d",
+    "count": 4
+  },
+  {
+    "id": "lego",
+    "title": "LEGO",
+    "image": "https://lh3.googleusercontent.com/d/1YhZom2cVa2ROZDCCkihdYJuASwBEVazi",
+    "filterQuery": "lego bloco 500% minifig boneco lego qui-gon vegeta tigrão freddy batman",
+    "count": 2
+  },
+  {
+    "id": "brinquedos-educativos",
+    "title": "BRINQUEDOS EDUCATIVOS",
+    "image": "https://lh3.googleusercontent.com/d/1gQg05kdHXUTt0Al0dD0RsuOaZaWOfnbL",
+    "filterQuery": "brinquedos educativos educativo quebra-cabeça quebra cabeca engrenagem labirinto encaixe infantil didatico",
+    "count": 13
+  },
+  {
+    "id": "minecraft",
+    "title": "MINECRAFT",
+    "image": "https://i.imgur.com/kW6l3MM.png",
+    "filterQuery": "minecraft creeper steve espada picareta enderman tnt bloco xadrez",
+    "count": 38
+  },
+  {
+    "id": "super-mario",
+    "title": "SUPER MARIO",
+    "image": "https://lh3.googleusercontent.com/d/1QutOVtYRb5QO6jJvt-GIrI0e9hZWFwAS=s600",
+    "filterQuery": "super mario luigi peach bowser yoshi toad peaky blinders samurai assassino capitão",
+    "count": 61
+  },
+  {
+    "id": "action-figures-3d",
+    "title": "ACTION FIGURES & GEEK",
+    "image": "https://lh3.googleusercontent.com/d/1aPKlJEHTwKUyuzBqPi32OfxK6vjg9nPN=s600",
+    "filterQuery": "action figures geek colecionável boneco estatueta multipartes",
+    "count": 94
+  },
+  {
+    "id": "canecas-gamer",
+    "title": "CANECAS GAMER",
+    "image": "https://i.imgur.com/0Pzyuuo.webp",
+    "filterQuery": "caneca gamer playstation mortal kombat call of duty gta minecraft",
+    "count": 66
+  },
+  {
+    "id": "canecas-de-times",
+    "title": "CANECAS DE TIMES",
+    "image": "https://i.imgur.com/guXbpbS.png",
+    "filterQuery": "caneca térmica futebol time flamengo corinthians palmeiras são paulo grêmio internacional cruzeiro atlético vasco",
+    "count": 120
+  },
+  {
+    "id": "dc-comics",
+    "title": "DC COMICS",
+    "image": "https://lh3.googleusercontent.com/d/1hPhddn74tcCola1-3LlEzEOqUOZD3Abb=s600",
+    "filterQuery": "dc comics batman superman coringa darkseid flash mulher maravilha arlequina",
+    "count": 48
+  },
+  {
+    "id": "vingadores-e-marvel",
+    "title": "VINGADORES & MARVEL",
+    "image": "https://lh3.googleusercontent.com/d/1bRugzuJGp4ZFP-LAgwyn7O6lBNlGFJmK=s600",
+    "filterQuery": "vingadores marvel homem de ferro thor capitão américa hulk wolverine deadpool venom homem-aranha",
+    "count": 28
+  },
+  {
+    "id": "futebol",
+    "title": "FUTEBOL",
+    "image": "https://lh3.googleusercontent.com/d/1iWPyMQqKmfghu0d8KwU5TNFzIuk4o9fd=s640-rw",
+    "filterQuery": "futebol estádio caneca escudo troféu mascote copa libertadores",
+    "count": 45
+  },
+  {
+    "id": "mascotes-de-futebol",
+    "title": "MASCOTES DE FUTEBOL",
+    "image": "https://lh3.googleusercontent.com/u/0/d/1qPcMKVl1z5wQTLcYxvclfmLKsmCzSuhI",
+    "filterQuery": "mascote futebol urubu gavião porco periquito raposa galo tigre",
+    "count": 44
+  },
+  {
+    "id": "chaveiros",
+    "title": "CHAVEIROS",
+    "image": "https://lh3.googleusercontent.com/u/0/d/1o4aXuLZA1XL8H6EKtgQuZmZ5VG-DRvyz",
+    "filterQuery": "chaveiro chaveiros keychain logo tag",
+    "count": 8
+  },
+  {
+    "id": "bonecos-de-trico",
+    "title": "BONECOS DE TRICÔ",
+    "image": "https://lh3.googleusercontent.com/d/11DG60AQLY9VtnrSFycg9QqRHWapxr-vF=s600",
+    "filterQuery": "tricô trico crochê amigurumi lã tecido fofo articulado",
+    "count": 6
+  },
+  {
+    "id": "bustos-colecionaveis",
+    "title": "BUSTOS COLECIONÁVEIS",
+    "image": "https://lh3.googleusercontent.com/d/1DfIETt0W1x3tuTuwq1DVpQY5CJSiBSc5=s640-rw",
+    "filterQuery": "busto bustos estátua escultura cabeça suporte fone",
+    "count": 99
+  },
+  {
+    "id": "aeromodels",
+    "title": "AEROMODELS (AVIÕES & DRONES)",
+    "image": "https://lh3.googleusercontent.com/d/1TiyI--JqT9bRcddcErubmGrLfwq8G0Hl",
+    "filterQuery": "avião aviao drone caça f-16 boeing helicóptero aeromodelismo asas",
+    "count": 63
+  },
+  {
+    "id": "armas-e-props",
+    "title": "ARMAS & PROPS",
+    "image": "https://lh3.googleusercontent.com/d/1nEnDFwUbRhxWOJuYDdqqDaUUzW_GOGN4",
+    "filterQuery": "arma prop espada faca pistola cosplay escudo colt sobrenatural",
+    "count": 6
+  },
+  {
+    "id": "arte-sacra-e-religiao",
+    "title": "ARTE SACRA & RELIGIÃO",
+    "image": "https://lh3.googleusercontent.com/d/1e-IT5eUwbCAk27mcjpjhbd5WMSlqpgT8=s640-rw",
+    "filterQuery": "sacra religião jesus nossa senhora cristo santo cruz bíblia oração",
+    "count": 19
+  },
+  {
+    "id": "utensilios-e-casa",
+    "title": "UTENSÍLIOS & CASA",
+    "image": "https://lh3.googleusercontent.com/d/1oZGQMdlviAQ-rinamSPXqcjctkNlTgmt=s220-rw",
+    "filterQuery": "utensílio casa cozinha vaso suporte organizador porta toalha luminária",
+    "count": 87
+  },
+  {
+    "id": "animais-e-pets",
+    "title": "ANIMAIS & PETS",
+    "image": "https://lh3.googleusercontent.com/d/1e-IT5eUwbCAk27mcjpjhbd5WMSlqpgT8=s640-rw",
+    "filterQuery": "animal animais pet cachorro cão gato leão cavalo pássaro dinossauro",
+    "count": 21
+  },
+  {
+    "id": "modelos-dobraveis",
+    "title": "MODELOS DOBRÁVEIS (FAB365)",
+    "image": "https://lh3.googleusercontent.com/d/1vrYctOYYGKLVtcurtEG5GL_S1rcUWFgv=s640-rw",
+    "filterQuery": "dobrável dobravel articulado print in place dobrar fab365 xadrez",
+    "count": 28
+  },
+  {
+    "id": "minimundo-e-monumentos",
+    "title": "MINIMUNDO & MONUMENTOS",
+    "image": "https://lh3.googleusercontent.com/d/1dukxEHlYOyOvwGJmsKoTr0lxtYXFWf5w=s220-rw",
+    "filterQuery": "monumento arco do triunfo torre eiffel estádio minimundo maquete arquitetura",
+    "count": 14
+  },
+  {
+    "id": "trofeus-e-copas",
+    "title": "TROFÉUS & COPAS",
+    "image": "https://lh3.googleusercontent.com/d/1iWPyMQqKmfghu0d8KwU5TNFzIuk4o9fd=s640-rw",
+    "filterQuery": "troféu trofeu copa do mundo taça champions libertadores taça troféus medalha",
+    "count": 12
+  },
+  {
+    "id": "aramados",
+    "title": "ARAMADOS & DESIGN ORGÂNICO",
+    "image": "https://lh3.googleusercontent.com/u/0/d/1v27yE41gLxI5CvnbA0vqCHfIoR8uuaxv",
+    "filterQuery": "aramado vaso luminária orgânico voronoi design aramados",
+    "count": 2
+  },
+  {
+    "id": "tekken",
+    "title": "TEKKEN",
+    "image": "https://lh3.googleusercontent.com/d/1YhZom2cVa2ROZDCCkihdYJuASwBEVazi",
+    "filterQuery": "tekken kazuya heihachi jin kazama",
+    "count": 3
+  },
+  {
+    "id": "filmes",
+    "title": "FILMES",
+    "image": "https://lh3.googleusercontent.com/d/1jEy5W4OL3ZGrYxbP1uQyIGz-4WSubIlt=s640-rw",
+    "filterQuery": "filme cinema arnold terminator exterminador star wars matrix",
+    "count": 7
+  }
+]
