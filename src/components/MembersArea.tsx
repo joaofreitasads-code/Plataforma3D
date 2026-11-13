@@ -492,7 +492,7 @@ export const MembersArea: React.FC<MembersAreaProps> = ({ currentUser, onLogout 
       </header>
 
       {/* 2. BODY LAYOUT: SIDEBAR + MAIN CONTENT */}
-      <div className="flex-1 flex overflow-hidden">
+      <div className="flex-1 flex overflow-x-clip">
         <div className="hidden md:block">
           <Sidebar
             activeTab={activeTab}

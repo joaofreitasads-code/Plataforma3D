@@ -15,13 +15,13 @@ interface CachedImage {
   contentType: string;
 }
 
-const MAX_CACHE_ENTRIES = 800;
+const MAX_CACHE_ENTRIES = 1200;
 const MAX_SINGLE_IMAGE_BYTES = 1536 * 1024; // 1.5 MB
 const imageCache = new Map<string, CachedImage>();
 const inFlightRequests = new Map<string, Promise<CachedImage | null>>();
 
 // Limit concurrent upstream fetches so rapid scrolling doesn't trigger Google 429 rate limits
-const MAX_CONCURRENT_UPSTREAM = 16;
+const MAX_CONCURRENT_UPSTREAM = 24;
 let activeUpstream = 0;
 const upstreamQueue: Array<() => void> = [];
 
@@ -59,7 +59,7 @@ function setLruCache(key: string, value: CachedImage): void {
 
 async function fetchCandidateImage(url: string): Promise<CachedImage | null> {
   const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), 6500);
+  const timeout = setTimeout(() => controller.abort(), 4000);
   try {
     const response = await fetch(url, {
       signal: controller.signal,

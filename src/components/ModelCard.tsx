@@ -72,8 +72,11 @@ const ModelCardComponent: React.FC<ModelCardProps> = ({
   }, [currentSrc]);
 
   const handleImageError = useCallback(() => {
+    const isLocalPath = Boolean(rawSrc && rawSrc.startsWith('/'));
+    const maxAttempts = isLocalPath ? 1 : 3;
+
     const advanceFallback = () => {
-      if (fallbackAttempt < 3) {
+      if (fallbackAttempt < maxAttempts) {
         setFallbackAttempt(prev => prev + 1);
         return;
       }
@@ -85,13 +88,9 @@ const ModelCardComponent: React.FC<ModelCardProps> = ({
       setImageError(true);
     };
 
-    if (currentSrc && currentSrc.startsWith('http')) {
-      clearRetryTimer();
-      retryTimerRef.current = window.setTimeout(advanceFallback, 120);
-    } else {
-      advanceFallback();
-    }
-  }, [fallbackAttempt, currentImageIndex, allImages.length, currentSrc, clearRetryTimer]);
+    clearRetryTimer();
+    retryTimerRef.current = window.setTimeout(advanceFallback, isLocalPath ? 250 : 120);
+  }, [fallbackAttempt, currentImageIndex, allImages.length, rawSrc, clearRetryTimer]);
 
   const handlePrevImage = useCallback((e: React.MouseEvent) => {
     e.stopPropagation();
@@ -144,7 +143,7 @@ const ModelCardComponent: React.FC<ModelCardProps> = ({
       className="group rounded-2xl overflow-hidden cursor-pointer transition-colors duration-150 flex flex-col justify-between text-left bg-[#141720] hover:bg-[#181c27] border border-[#202534] hover:border-[#ff5500]/60 hover:shadow-[0_12px_28px_rgba(0,0,0,0.6)] relative select-none"
     >
       {/* Top Image Container with Studio Wooden Table Background */}
-      <div className="w-full aspect-square relative overflow-hidden bg-[#0d0f14] flex items-center justify-center group/image select-none">
+      <div className="w-full aspect-square relative overflow-hidden bg-[#0d0f14] group/image select-none">
         <img
           src={bgSrc}
           width={300}
@@ -168,14 +167,14 @@ const ModelCardComponent: React.FC<ModelCardProps> = ({
             width={300}
             height={300}
             referrerPolicy={isExternalSrc ? 'no-referrer' : undefined}
-            loading={priority ? 'eager' : 'lazy'}
-            decoding="async"
+            loading="eager"
+            decoding={priority ? 'sync' : 'async'}
             fetchPriority={priority ? 'high' : 'auto'}
             onError={handleImageError}
             className={
               isCutoutOrSvg
-                ? "w-full h-full object-contain p-2 relative z-10 transition-transform duration-300 group-hover:scale-105 drop-shadow-[0_6px_12px_rgba(0,0,0,0.55)]"
-                : "w-full h-full object-cover object-center relative z-10 transition-transform duration-300 group-hover:scale-[1.03]"
+                ? "absolute inset-0 w-full h-full object-contain p-2 z-10 transition-transform duration-300 group-hover:scale-105 drop-shadow-[0_6px_12px_rgba(0,0,0,0.55)]"
+                : "absolute inset-0 w-full h-full object-cover object-center z-10 transition-transform duration-300 group-hover:scale-[1.03]"
             }
           />
         ) : (

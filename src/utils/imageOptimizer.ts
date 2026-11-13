@@ -36,7 +36,9 @@ export function getOptimizedCardImageUrl(
   targetWidth: number = 240
 ): string {
   if (!rawUrlOrId) return '';
-  if (rawUrlOrId.startsWith('/')) return rawUrlOrId;
+  if (rawUrlOrId.startsWith('/')) {
+    return attempt > 0 ? `${rawUrlOrId}${rawUrlOrId.includes('?') ? '&' : '?'}r=${attempt}` : rawUrlOrId;
+  }
 
   if (rawUrlOrId.includes('imgur.com')) {
     if (rawUrlOrId.toLowerCase().includes('.png')) {

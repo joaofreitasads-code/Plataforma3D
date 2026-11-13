@@ -15,7 +15,7 @@ export const BonusSectionsGrid: React.FC<BonusSectionsGridProps> = ({
     <div className="space-y-4 text-left">
       {/* Grid of 14 Sections matching ref3.png (2 Columns on Desktop) */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-5">
-        {BONUS_SECTIONS.map((section, idx) => (
+        {BONUS_SECTIONS.map((section) => (
           <div
             key={section.id}
             onClick={() => onSelectSection(section.categoryFilter)}
@@ -29,7 +29,7 @@ export const BonusSectionsGrid: React.FC<BonusSectionsGridProps> = ({
               <img
                 src={section.image}
                 alt={section.title}
-                loading={idx < 8 ? 'eager' : 'lazy'}
+                loading="eager"
                 decoding="async"
                 className="w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-300"
               />

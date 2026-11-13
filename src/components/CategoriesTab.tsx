@@ -58,7 +58,7 @@ export const CategoriesTab: React.FC<CategoriesTabProps> = ({
 
       {/* Grid of 4 columns matching exact user reference cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-5">
-        {filteredCategories.map((category, idx) => (
+        {filteredCategories.map((category) => (
           <div
             key={category.id}
             onClick={() => onSelectCategory(category)}
@@ -70,7 +70,7 @@ export const CategoriesTab: React.FC<CategoriesTabProps> = ({
                 <img
                   src={category.image}
                   alt={category.title}
-                  loading={idx < 12 ? 'eager' : 'lazy'}
+                  loading="eager"
                   decoding="async"
                   onError={() => setFailedImages(prev => ({ ...prev, [category.id]: true }))}
                   className="w-full h-full object-cover object-center transition-transform duration-300 group-hover:scale-105"
