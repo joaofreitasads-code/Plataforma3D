@@ -783,7 +783,7 @@ export const MembersArea: React.FC<MembersAreaProps> = ({ currentUser, onLogout 
                       <ModelCard
                         key={model.id}
                         model={model}
-                        priority={index < 5}
+                        priority={index < 20}
                         isFavorite={favoriteSet.has(model.id)}
                         onToggleFavorite={handleToggleFavorite}
                         onOpenDetails={handleOpenModel}

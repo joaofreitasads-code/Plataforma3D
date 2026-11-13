@@ -1,4 +1,4 @@
-import { VIP_DRIVE_MAIN_URL } from './modelsData';
+import { VIP_DRIVE_MAIN_URL } from './catalogMeta';
 
 export interface BonusSection {
   id: string;

@@ -88,15 +88,20 @@ export const DownloadsTab: React.FC<DownloadsTabProps> = ({
                 onClick={() => onOpenModel(model)}
               >
                 <div className="w-14 h-14 rounded-xl bg-[#090a0d] border border-[#262933] shrink-0 overflow-hidden flex items-center justify-center">
-                  {model.imageUrl ? (
-                    <img 
-                      src={getOptimizedCardImageUrl(model.imageUrl, 0, 160)} 
-                      alt="" 
-                      referrerPolicy="no-referrer"
-                      loading="lazy"
-                      decoding="async"
-                      className="w-full h-full object-cover object-center" 
-                    />
+                  {(model.thumbnailUrl || model.imageUrl) ? (
+                    (() => {
+                      const thumb = getOptimizedCardImageUrl(model.thumbnailUrl || model.imageUrl, 0, 160);
+                      return (
+                        <img 
+                          src={thumb} 
+                          alt="" 
+                          referrerPolicy={thumb.startsWith('http') ? 'no-referrer' : undefined}
+                          loading="eager"
+                          decoding="async"
+                          className="w-full h-full object-cover object-center" 
+                        />
+                      );
+                    })()
                   ) : (
                     <Box className="w-6 h-6 text-[#ff6600]" />
                   )}

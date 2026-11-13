@@ -174,7 +174,7 @@ export const ModelDetailModal: React.FC<ModelDetailModalProps> = ({
                   <img
                     src={currentSrc}
                     alt={model.title}
-                    referrerPolicy="no-referrer"
+                    referrerPolicy={currentSrc.startsWith('http') ? 'no-referrer' : undefined}
                     decoding="async"
                     fetchPriority="high"
                     className={`w-full h-full ${
@@ -246,7 +246,9 @@ export const ModelDetailModal: React.FC<ModelDetailModalProps> = ({
                     <span className="text-white font-black uppercase">Galeria de Fotos</span>
                   </div>
                   <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none">
-                    {allImages.map((imgUrl, idx) => (
+                    {allImages.map((imgUrl, idx) => {
+                      const thumbSrc = getOptimizedCardImageUrl(imgUrl, 0, 160);
+                      return (
                       <button
                         key={idx}
                         type="button"
@@ -262,15 +264,16 @@ export const ModelDetailModal: React.FC<ModelDetailModalProps> = ({
                         }`}
                       >
                         <img
-                          src={getOptimizedCardImageUrl(imgUrl, 0, 160)}
+                          src={thumbSrc}
                           alt=""
-                          referrerPolicy="no-referrer"
+                          referrerPolicy={thumbSrc.startsWith('http') ? 'no-referrer' : undefined}
                           loading="lazy"
                           decoding="async"
                           className="w-full h-full object-contain object-center p-1 bg-[#141414]"
                         />
                       </button>
-                    ))}
+                      );
+                    })}
                   </div>
                 </div>
               )}

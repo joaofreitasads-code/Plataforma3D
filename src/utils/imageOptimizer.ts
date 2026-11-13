@@ -33,7 +33,7 @@ export function extractDriveId(urlOrId: string | undefined | null): string {
 export function getOptimizedCardImageUrl(
   rawUrlOrId: string | undefined | null,
   attempt: number = 0,
-  targetWidth: number = 220
+  targetWidth: number = 240
 ): string {
   if (!rawUrlOrId) return '';
   if (rawUrlOrId.startsWith('/')) return rawUrlOrId;
@@ -51,19 +51,17 @@ export function getOptimizedCardImageUrl(
   const id = extractDriveId(rawUrlOrId);
   if (!id) return rawUrlOrId;
 
-  const size = Math.min(260, Math.max(200, targetWidth));
+  const size = Math.min(280, Math.max(160, targetWidth));
 
   switch (attempt) {
     case 0:
-      return `https://lh3.googleusercontent.com/d/${id}=s${size}-rw`;
+      return `/api/img?id=${encodeURIComponent(id)}&sz=${size}`;
     case 1:
-      return `https://lh3.googleusercontent.com/d/${id}=s${size}`;
+      return `https://lh3.googleusercontent.com/d/${id}=s${size}-rw`;
     case 2:
-      return `https://drive.google.com/thumbnail?id=${id}&sz=w${size}`;
+      return `https://lh3.googleusercontent.com/d/${id}=s${size}`;
     case 3:
-      return `https://lh3.googleusercontent.com/d/${id}`;
-    case 4:
-      return `https://drive.usercontent.google.com/download?id=${id}&export=view`;
+      return `https://drive.google.com/thumbnail?id=${id}&sz=w${size}`;
     default:
       return `https://lh3.googleusercontent.com/d/${id}`;
   }
@@ -94,13 +92,13 @@ export function getOptimizedModalImageUrl(
 
   switch (attempt) {
     case 0:
-      return `https://lh3.googleusercontent.com/d/${id}=s640-rw`;
+      return `/api/img?id=${encodeURIComponent(id)}&sz=640`;
     case 1:
-      return `https://lh3.googleusercontent.com/d/${id}=s640`;
+      return `https://lh3.googleusercontent.com/d/${id}=s640-rw`;
     case 2:
-      return `https://drive.google.com/thumbnail?id=${id}&sz=w700`;
+      return `https://lh3.googleusercontent.com/d/${id}=s640`;
     case 3:
-      return `https://lh3.googleusercontent.com/d/${id}`;
+      return `https://drive.google.com/thumbnail?id=${id}&sz=w700`;
     default:
       return `https://lh3.googleusercontent.com/d/${id}`;
   }

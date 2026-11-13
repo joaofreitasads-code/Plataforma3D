@@ -38,6 +38,7 @@ const ModelCardComponent: React.FC<ModelCardProps> = ({
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [imageError, setImageError] = useState(false);
   const [fallbackAttempt, setFallbackAttempt] = useState(0);
+  const [bgSrc, setBgSrc] = useState('/model_card_bg.webp');
   const retryTimerRef = useRef<number | null>(null);
 
   const rawSrc = currentImageIndex < allImages.length
@@ -60,13 +61,19 @@ const ModelCardComponent: React.FC<ModelCardProps> = ({
   }, [clearRetryTimer]);
 
   useEffect(() => {
+    clearRetryTimer();
+    setCurrentImageIndex(0);
+    setFallbackAttempt(0);
+    setImageError(false);
+  }, [model.id, clearRetryTimer]);
+
+  useEffect(() => {
     setImageError(false);
   }, [currentSrc]);
 
-  // Fast failure recovery: max 2 resized CDN attempts per URL before falling back cleanly to SVG preview
   const handleImageError = useCallback(() => {
     const advanceFallback = () => {
-      if (fallbackAttempt < 1) {
+      if (fallbackAttempt < 3) {
         setFallbackAttempt(prev => prev + 1);
         return;
       }
@@ -78,9 +85,9 @@ const ModelCardComponent: React.FC<ModelCardProps> = ({
       setImageError(true);
     };
 
-    if (currentSrc && !currentSrc.startsWith('/')) {
+    if (currentSrc && currentSrc.startsWith('http')) {
       clearRetryTimer();
-      retryTimerRef.current = window.setTimeout(advanceFallback, 150);
+      retryTimerRef.current = window.setTimeout(advanceFallback, 120);
     } else {
       advanceFallback();
     }
@@ -111,6 +118,7 @@ const ModelCardComponent: React.FC<ModelCardProps> = ({
   const isVipCheckout = model.id === 'produto-vip-vitalicio-cadeado';
   const hasPhoto = Boolean(currentSrc && !imageError);
   const badgeText = model.badge || (model.stlFiles?.some(f => f.name.endsWith('.3mf')) ? '3MF' : 'STL');
+  const isExternalSrc = currentSrc.startsWith('http');
 
   const isCutoutOrSvg = Boolean(
     currentSrc && (
@@ -133,17 +141,33 @@ const ModelCardComponent: React.FC<ModelCardProps> = ({
           onOpenDetails(model);
         }
       }}
-      className="group rounded-2xl overflow-hidden cursor-pointer transition-colors duration-150 flex flex-col justify-between text-left bg-[#141720] hover:bg-[#181c27] border border-[#202534] hover:border-[#ff5500]/60 hover:shadow-[0_12px_28px_rgba(0,0,0,0.6)] relative [contain:layout_style_paint] select-none"
+      className="group rounded-2xl overflow-hidden cursor-pointer transition-colors duration-150 flex flex-col justify-between text-left bg-[#141720] hover:bg-[#181c27] border border-[#202534] hover:border-[#ff5500]/60 hover:shadow-[0_12px_28px_rgba(0,0,0,0.6)] relative select-none"
     >
-      {/* Top Image Container with CSS Studio Wooden Table Background (avoids 2x <img> DOM nodes) */}
-      <div className="w-full aspect-square relative overflow-hidden bg-[#0d0f14] bg-[url('/model_card_bg.webp')] bg-cover bg-center flex items-center justify-center group/image select-none">
+      {/* Top Image Container with Studio Wooden Table Background */}
+      <div className="w-full aspect-square relative overflow-hidden bg-[#0d0f14] flex items-center justify-center group/image select-none">
+        <img
+          src={bgSrc}
+          width={300}
+          height={300}
+          loading="eager"
+          decoding="async"
+          alt=""
+          aria-hidden="true"
+          onError={() => {
+            if (bgSrc !== 'https://i.imgur.com/dxozWx0.png') {
+              setBgSrc('https://i.imgur.com/dxozWx0.png');
+            }
+          }}
+          className="absolute inset-0 w-full h-full object-cover object-center pointer-events-none select-none z-0"
+        />
+
         {hasPhoto ? (
           <img
             src={currentSrc}
             alt={model.title}
             width={300}
             height={300}
-            referrerPolicy="no-referrer"
+            referrerPolicy={isExternalSrc ? 'no-referrer' : undefined}
             loading={priority ? 'eager' : 'lazy'}
             decoding="async"
             fetchPriority={priority ? 'high' : 'auto'}
