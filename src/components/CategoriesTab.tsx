@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { Search, ChevronRight, Sparkles, Folder, ArrowLeft } from 'lucide-react';
 import { OFFICIAL_CATEGORIES, CategoryItem } from '../data/categoriesData';
-import { VIP_DRIVE_MAIN_URL } from '../data/modelsData';
+import { VIP_DRIVE_MAIN_URL } from '../data/catalogMeta';
 
 interface CategoriesTabProps {
   onSelectCategory: (category: CategoryItem) => void;
@@ -13,6 +13,7 @@ export const CategoriesTab: React.FC<CategoriesTabProps> = ({
   onOpenDrive
 }) => {
   const [searchQuery, setSearchQuery] = useState('');
+  const [failedImages, setFailedImages] = useState<Record<string, boolean>>({});
 
   const filteredCategories = useMemo(() => {
     if (!searchQuery.trim()) return OFFICIAL_CATEGORIES;
@@ -65,13 +66,24 @@ export const CategoriesTab: React.FC<CategoriesTabProps> = ({
           >
             {/* Top Visual Image Banner (16:9 / 3:2 ratio) */}
             <div className="w-full aspect-[16/10] relative overflow-hidden bg-[#090b10] flex items-center justify-center">
-              <img
-                src={category.image}
-                alt={category.title}
-                loading="lazy"
-                decoding="async"
-                className="w-full h-full object-cover object-center transition-transform duration-300 group-hover:scale-105"
-              />
+              {!failedImages[category.id] ? (
+                <img
+                  src={category.image}
+                  alt={category.title}
+                  referrerPolicy="no-referrer"
+                  loading="lazy"
+                  decoding="async"
+                  onError={() => setFailedImages(prev => ({ ...prev, [category.id]: true }))}
+                  className="w-full h-full object-cover object-center transition-transform duration-300 group-hover:scale-105"
+                />
+              ) : (
+                <div className="flex flex-col items-center justify-center gap-1.5 text-[#ff5500]">
+                  <Folder className="w-8 h-8" />
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-neutral-400">
+                    {category.title}
+                  </span>
+                </div>
+              )}
               {/* Subtle top/bottom gradient overlay */}
               <div className="absolute inset-0 bg-gradient-to-t from-[#12151e] via-transparent to-black/20 opacity-60 group-hover:opacity-40 transition-opacity pointer-events-none" />
             </div>

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Calculator } from 'lucide-react';
-import { LUCRATIVE_PRODUCTS, LucrativeProduct } from '../data/modelsData';
+import { LUCRATIVE_PRODUCTS, LucrativeProduct } from '../data/catalogMeta';
 
 interface ProfitCalculatorProps {
   onSelectProduct?: (title: string) => void;

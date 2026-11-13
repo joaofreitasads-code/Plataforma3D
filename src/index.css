@@ -1,37 +1,69 @@
 @import "tailwindcss";
 
+@theme {
+  --font-sans: 'Montserrat', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --font-montserrat: 'Montserrat', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+}
+
 @layer base {
-  body {
-    font-family: 'Montserrat', 'Plus Jakarta Sans', system-ui, sans-serif;
-    background-color: #0b0c0e;
+  html, body {
+    font-family: 'Montserrat', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    background-color: #0b0c0e; /* Fundo Preto Profundo no Tema Preto & Laranja */
+    color: #FFFFFF;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+    letter-spacing: -0.01em;
+  }
+
+  ::selection {
+    background-color: #ff6600;
     color: #ffffff;
-    overflow-x: hidden;
+  }
+
+  /* Letras da área de membros na fonte Montserrat: bem visíveis e fáceis de ler */
+  body, p, span, div, a, button, input, select, textarea, label, li, td, th {
+    font-family: 'Montserrat', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  }
+
+  /* Títulos com excelente peso, contraste e legibilidade */
+  h1, h2, h3, h4, h5, h6, strong, b {
+    font-family: 'Montserrat', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    font-weight: 800;
+    letter-spacing: -0.015em;
+  }
+
+  button, input, select, textarea {
+    font-family: 'Montserrat', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   }
 }
 
-/* Custom scrollbars */
+@layer utilities {
+  .font-montserrat {
+    font-family: 'Montserrat', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  }
+  .font-cinzel {
+    font-family: 'Cinzel', serif, ui-serif, Georgia;
+    font-weight: 800;
+  }
+  .font-mono {
+    font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    font-weight: 600;
+  }
+}
+
+/* Scrollbar no estilo preto e laranja */
 ::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
+  width: 7px;
+  height: 7px;
 }
-
 ::-webkit-scrollbar-track {
-  background: #0d0f14;
+  background: #0b0c0e;
 }
-
 ::-webkit-scrollbar-thumb {
-  background: #222736;
+  background: #262933;
   border-radius: 4px;
 }
-
 ::-webkit-scrollbar-thumb:hover {
-  background: #ff5500;
-}
-
-.scrollbar-none::-webkit-scrollbar {
-  display: none;
-}
-.scrollbar-none {
-  -ms-overflow-style: none;
-  scrollbar-width: none;
+  background: #ff6600;
 }

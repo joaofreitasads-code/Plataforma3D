@@ -1,6 +1,6 @@
 import React from 'react';
 import { X } from 'lucide-react';
-import { VIP_DRIVE_MAIN_URL } from '../data/modelsData';
+import { VIP_DRIVE_MAIN_URL } from '../data/catalogMeta';
 
 interface NotificationsModalProps {
   isOpen: boolean;

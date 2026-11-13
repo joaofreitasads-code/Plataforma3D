@@ -1,58 +1,123 @@
-import React, { useState, useMemo, useEffect, useRef, useDeferredValue } from 'react';
-import { 
-  Search, Bell, Heart,
-  ChevronDown, Menu, X, ArrowUpDown, Box, Check, LogOut,
-  Sparkles, Crown, Download, ExternalLink, Folder, BarChart3,
-  SlidersHorizontal, User, Trophy
+import React, { useState, useMemo, useEffect, useRef, useDeferredValue, useCallback, lazy, Suspense } from 'react';
+import {
+  Search, Bell, Heart, Menu, X, Box, LogOut,
+  Crown, Download, ExternalLink, User, Trophy
 } from 'lucide-react';
-import { 
-  ALL_MODELS, VIP_DRIVE_MAIN_URL,
-  ModelItem 
-} from '../data/modelsData';
-import { preloadPriorityImages, preloadImageBatch } from '../utils/imageOptimizer';
+import { ModelItem, VIP_DRIVE_MAIN_URL, TOTAL_CATALOG_MODELS_COUNT } from '../data/catalogMeta';
+import { FRONT_DASHBOARD_MODELS } from '../data/frontDashboardModels';
 import { ModelCard } from './ModelCard';
-import { ModelDetailModal } from './ModelDetailModal';
-import { NotificationsModal } from './NotificationsModal';
-import { DownloadsTab } from './DownloadsTab';
-import { BonusSectionsGrid } from './BonusSectionsGrid';
-import { CategoriesTab } from './CategoriesTab';
 import { CategoryItem } from '../data/categoriesData';
 import { Sidebar, TabKey } from './Sidebar';
 import { MemberUser } from '../types/auth';
+
+// Lazy-load secondary tabs and modals so initial catalog render is ultra-light
+const ModelDetailModal = lazy(() => import('./ModelDetailModal').then(m => ({ default: m.ModelDetailModal })));
+const NotificationsModal = lazy(() => import('./NotificationsModal').then(m => ({ default: m.NotificationsModal })));
+const DownloadsTab = lazy(() => import('./DownloadsTab').then(m => ({ default: m.DownloadsTab })));
+const BonusSectionsGrid = lazy(() => import('./BonusSectionsGrid').then(m => ({ default: m.BonusSectionsGrid })));
+const CategoriesTab = lazy(() => import('./CategoriesTab').then(m => ({ default: m.CategoriesTab })));
+const ProfitCalculator = lazy(() => import('./ProfitCalculator').then(m => ({ default: m.ProfitCalculator })));
+const SettingsTab = lazy(() => import('./SettingsTab').then(m => ({ default: m.SettingsTab })));
 
 interface MembersAreaProps {
   currentUser: MemberUser;
   onLogout: () => void;
 }
 
-// Filter pills matching the real 3D printing catalog in the ref4.png style
 const PILL_FILTERS = [
   { id: 'all', label: 'Todos' },
+  { id: 'estadios', label: 'Estádios 3D' },
+  { id: 'canecas', label: 'Canecas de Time' },
+  { id: 'mascotes', label: 'Mascotes' },
   { id: 'action-figures', label: 'Action Figures' },
-  { id: 'geek', label: 'Geek & Gamer' },
   { id: 'chaveiros', label: 'Chaveiros' },
   { id: 'pokemon', label: 'Pokémon' },
   { id: 'articulados', label: 'Articulados' },
-  { id: 'estadios', label: 'Estádios' },
+  { id: 'geek', label: 'Geek & Gamer' },
   { id: 'carros', label: 'Carros & Veículos' },
 ];
 
+// Progressive background loader for the full 1,355-model catalog
+let cachedFullModels: ModelItem[] | null = null;
+let fullModelsPromise: Promise<ModelItem[]> | null = null;
+
+function loadFullCatalog(): Promise<ModelItem[]> {
+  if (cachedFullModels) return Promise.resolve(cachedFullModels);
+  if (!fullModelsPromise) {
+    fullModelsPromise = import('../data/modelsData').then((mod) => {
+      cachedFullModels = mod.ALL_MODELS;
+      return mod.ALL_MODELS;
+    });
+  }
+  return fullModelsPromise;
+}
+
+// WeakMap cache of pre-lowercased search haystacks to avoid repeated allocations during filtering
+const searchHaystackCache = new WeakMap<ModelItem, { title: string; category: string; full: string }>();
+
+function getSearchEntry(m: ModelItem) {
+  let entry = searchHaystackCache.get(m);
+  if (!entry) {
+    const title = m.title.toLowerCase();
+    const category = m.category.toLowerCase();
+    const full = `${title} ${category} ${(m.description || '').toLowerCase()} ${(m.badge || '').toLowerCase()}`;
+    entry = { title, category, full };
+    searchHaystackCache.set(m, entry);
+  }
+  return entry;
+}
+
+const TabLoadingFallback = (
+  <div className="py-16 flex items-center justify-center text-xs font-bold text-neutral-400">
+    Carregando...
+  </div>
+);
+
 export const MembersArea: React.FC<MembersAreaProps> = ({ currentUser, onLogout }) => {
+  const [modelsList, setModelsList] = useState<ModelItem[]>(() => cachedFullModels || FRONT_DASHBOARD_MODELS);
+  const [isFullCatalogLoaded, setIsFullCatalogLoaded] = useState<boolean>(() => Boolean(cachedFullModels));
+
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<TabKey>('catalog');
   const [searchQuery, setSearchQuery] = useState('');
   const deferredSearchQuery = useDeferredValue(searchQuery);
   const [selectedPill, setSelectedPill] = useState<string>('all');
   const [selectedSessionFilter, setSelectedSessionFilter] = useState<string>('all');
+  const [activeCategoryFilter, setActiveCategoryFilter] = useState<CategoryItem | null>(null);
   const [sortBy, setSortBy] = useState<'recent' | 'name' | 'margin' | 'printTime'>('recent');
-  const [visibleCount, setVisibleCount] = useState<number>(35);
+  const [visibleCount, setVisibleCount] = useState<number>(30);
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
-  const [isMoreFiltersOpen, setIsMoreFiltersOpen] = useState(false);
 
   const searchInputRef = useRef<HTMLInputElement>(null);
   const loadMoreRef = useRef<HTMLDivElement | null>(null);
   const userMenuRef = useRef<HTMLDivElement | null>(null);
-  const moreFiltersRef = useRef<HTMLDivElement | null>(null);
+
+  const ensureFullCatalog = useCallback(() => {
+    if (cachedFullModels) {
+      if (!isFullCatalogLoaded) {
+        setModelsList(cachedFullModels);
+        setIsFullCatalogLoaded(true);
+      }
+      return;
+    }
+    loadFullCatalog()
+      .then((all) => {
+        setModelsList(all);
+        setIsFullCatalogLoaded(true);
+      })
+      .catch(() => {});
+  }, [isFullCatalogLoaded]);
+
+  // Hydrate full 1,355-model catalog right after initial paint so frame 1 stays near-instant
+  useEffect(() => {
+    if (isFullCatalogLoaded) return;
+    if (typeof window !== 'undefined' && 'requestIdleCallback' in window) {
+      const handle = (window as unknown as { requestIdleCallback: (cb: () => void, opts?: { timeout: number }) => number }).requestIdleCallback(ensureFullCatalog, { timeout: 150 });
+      return () => (window as unknown as { cancelIdleCallback: (id: number) => void }).cancelIdleCallback(handle);
+    }
+    const timer = globalThis.setTimeout(ensureFullCatalog, 50);
+    return () => globalThis.clearTimeout(timer);
+  }, [isFullCatalogLoaded, ensureFullCatalog]);
 
   // Global Ctrl + K shortcut to focus search bar
   useEffect(() => {
@@ -60,55 +125,72 @@ export const MembersArea: React.FC<MembersAreaProps> = ({ currentUser, onLogout 
       if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') {
         e.preventDefault();
         searchInputRef.current?.focus();
+        ensureFullCatalog();
       }
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, []);
+  }, [ensureFullCatalog]);
 
-  // Close user profile & more filters dropdown on click outside
+  // Close user profile dropdown on click outside
   useEffect(() => {
+    if (!isUserMenuOpen) return;
     const handleClickOutside = (e: MouseEvent) => {
       if (userMenuRef.current && !userMenuRef.current.contains(e.target as Node)) {
         setIsUserMenuOpen(false);
       }
-      if (moreFiltersRef.current && !moreFiltersRef.current.contains(e.target as Node)) {
-        setIsMoreFiltersOpen(false);
-      }
     };
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
+  }, [isUserMenuOpen]);
 
-  // Favorites state
+  // Favorites state + O(1) lookup set
   const [favorites, setFavorites] = useState<string[]>(() => {
     try {
       const saved = localStorage.getItem('universo3d_favorites');
-      return saved ? JSON.parse(saved) : ['poke-charizard', 'poke-gengar', 'funko-oferta-10'];
+      return saved ? JSON.parse(saved) : ['poke-charizard', 'poke-gengar', 'front-model-sonic-vermelho-1'];
     } catch {
       return ['poke-charizard'];
     }
   });
+
+  const favoriteSet = useMemo(() => new Set(favorites), [favorites]);
 
   // Downloads history state
   const [downloads, setDownloads] = useState<ModelItem[]>(() => {
     try {
       const saved = localStorage.getItem('universo3d_downloads');
       if (saved) return JSON.parse(saved);
-      const s1 = ALL_MODELS.find(m => m.id === 'poke-charizard');
-      const s2 = ALL_MODELS.find(m => m.id === 'poke-blastoise');
-      return [s1, s2].filter(Boolean) as ModelItem[];
     } catch {
-      return [];
+      // fallback below
     }
+    return [];
   });
+
+  // Seed default sample downloads once full catalog hydrates if user has no saved history yet
+  const seededDownloadsRef = useRef(false);
+  useEffect(() => {
+    if (!isFullCatalogLoaded || seededDownloadsRef.current) return;
+    seededDownloadsRef.current = true;
+    try {
+      if (localStorage.getItem('universo3d_downloads') !== null) return;
+    } catch {
+      return;
+    }
+    const s1 = modelsList.find(m => m.id === 'poke-charizard');
+    const s2 = modelsList.find(m => m.id === 'poke-blastoise');
+    const defaults = [s1, s2].filter(Boolean) as ModelItem[];
+    if (defaults.length > 0) {
+      setDownloads(prev => (prev.length === 0 ? defaults : prev));
+    }
+  }, [isFullCatalogLoaded, modelsList]);
 
   // Modals state
   const [selectedModel, setSelectedModel] = useState<ModelItem | null>(null);
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
   const [isNotificationsModalOpen, setIsNotificationsModalOpen] = useState(false);
 
-  // Sync favorites
+  // Sync favorites to localStorage
   useEffect(() => {
     try {
       localStorage.setItem('universo3d_favorites', JSON.stringify(favorites));
@@ -117,78 +199,89 @@ export const MembersArea: React.FC<MembersAreaProps> = ({ currentUser, onLogout 
     }
   }, [favorites]);
 
-  const modelsList = useMemo(() => {
-    return ALL_MODELS;
-  }, []);
-
-
-  // Filter models
-  const filteredModels = useMemo(() => {
+  // Filter catalog independently of favorites/downloads state so starring a card is O(1)
+  const catalogFilteredModels = useMemo(() => {
     let list = modelsList;
 
-    // Tab favorites
-    if (activeTab === 'favorites') {
-      return list.filter(m => favorites.includes(m.id));
-    }
-
-    // Tab downloads
-    if (activeTab === 'downloads') {
-      return downloads;
-    }
-
-    // Sidebar Category Filter
     if (selectedSessionFilter !== 'all') {
+      const sf = selectedSessionFilter.toLowerCase();
       list = list.filter(m => {
-        if (selectedSessionFilter === 'sec-chaveiros') return m.sectionId === 'sec-chaveiros' || m.category.toLowerCase().includes('chaveir');
-        if (selectedSessionFilter === 'sec-canecas') return m.sectionId === 'sec-canecas' || m.category.toLowerCase().includes('caneca');
-        if (selectedSessionFilter === 'sec-portacopos') return m.sectionId === 'sec-portacopos' || m.category.toLowerCase().includes('copos') || m.category.toLowerCase().includes('latas');
-        if (selectedSessionFilter === 'sec-canecas-gamer') return m.sectionId === 'sec-canecas-gamer' || m.category.toLowerCase().includes('gamer');
-        if (selectedSessionFilter === 'sec-estadios') return m.sectionId === 'sec-estadios' || m.category.toLowerCase().includes('estádios') || m.category.toLowerCase().includes('arenas');
-        if (selectedSessionFilter === 'sec-destaques-dashboard') return m.sectionId === 'sec-destaques-dashboard' || m.category.toLowerCase().includes('figure');
-        if (selectedSessionFilter === 'sec-mascotes') return m.sectionId === 'sec-mascotes' || m.category.toLowerCase().includes('mascote');
-        if (selectedSessionFilter === 'sec-carros') return m.sectionId === 'sec-carros' || m.category.toLowerCase().includes('carros') || m.category.toLowerCase().includes('veículos');
-        if (selectedSessionFilter === 'sec-pocket-pals') return m.sectionId === 'sec-pocket-pals' || m.category.toLowerCase().includes('pocket') || m.category.toLowerCase().includes('articulados');
-        if (selectedSessionFilter === 'sec-pokemon') return m.sectionId === 'sec-pokemon' || m.category.toLowerCase().includes('pokémon') || m.category.toLowerCase().includes('anime');
-        if (selectedSessionFilter === 'sec-minifiguras') return m.sectionId === 'sec-minifiguras' || m.category.toLowerCase().includes('lego');
-        if (selectedSessionFilter === 'sec-rpg') return m.sectionId === 'sec-rpg' || m.category.toLowerCase().includes('rpg');
-        return m.sectionId === selectedSessionFilter || m.category.toLowerCase().includes(selectedSessionFilter.toLowerCase());
+        const { category: cat, full: titleAndDesc } = getSearchEntry(m);
+        if (sf === 'sec-chaveiros' || sf === 'chaveiros') return m.sectionId === 'sec-chaveiros' || cat.includes('chaveir');
+        if (sf === 'sec-canecas' || sf === 'canecas') return m.sectionId === 'sec-canecas' || cat.includes('caneca');
+        if (sf === 'sec-portacopos' || sf === 'utilitarios') return m.sectionId === 'sec-portacopos' || cat.includes('copos') || cat.includes('latas') || titleAndDesc.includes('organizador');
+        if (sf === 'sec-canecas-gamer') return m.sectionId === 'sec-canecas-gamer' || cat.includes('gamer');
+        if (sf === 'sec-estadios' || sf === 'estadios') return m.sectionId === 'sec-estadios' || cat.includes('estádios') || cat.includes('arenas');
+        if (sf === 'sec-destaques-dashboard') return m.sectionId === 'sec-destaques-dashboard' || cat.includes('figure');
+        if (sf === 'sec-mascotes' || sf === 'mascotes') return m.sectionId === 'sec-mascotes' || cat.includes('mascote');
+        if (sf === 'sec-carros' || sf === 'carros') return m.sectionId === 'sec-carros' || m.sectionId === 'sec-veiculos' || cat.includes('carros') || cat.includes('veículos');
+        if (sf === 'sec-pocket-pals' || sf === 'pocket-pals') return m.sectionId === 'sec-pocket-pals' || cat.includes('pocket') || cat.includes('articulado') || titleAndDesc.includes('articulad');
+        if (sf === 'sec-pokemon' || sf === 'pokemon') return m.sectionId === 'sec-pokemon' || cat.includes('pokémon') || titleAndDesc.includes('pokemon');
+        if (sf === 'sec-minifiguras' || sf === 'sec-lego') return m.sectionId === 'sec-minifiguras' || cat.includes('lego');
+        if (sf === 'sec-rpg') return m.sectionId === 'sec-rpg' || cat.includes('rpg');
+        if (sf === 'filmes') return titleAndDesc.includes('marvel') || titleAndDesc.includes('dc') || titleAndDesc.includes('batman') || titleAndDesc.includes('herói');
+        if (sf === 'desenhos') return titleAndDesc.includes('desenho') || titleAndDesc.includes('clássico') || titleAndDesc.includes('simpsons') || titleAndDesc.includes('disney');
+        if (sf === 'vip') return titleAndDesc.includes('cosplay') || titleAndDesc.includes('máscara') || m.isHot;
+        if (sf === 'iluminacao') return titleAndDesc.includes('luminária') || titleAndDesc.includes('abajur') || m.sectionId === 'sec-luminarias';
+        if (sf === 'monster') return m.sectionId === 'sec-monster' || titleAndDesc.includes('minecraft') || titleAndDesc.includes('monster');
+        return m.sectionId === selectedSessionFilter || cat.includes(sf);
       });
     }
 
-    // Pill filter
+    if (activeCategoryFilter && !activeCategoryFilter.sectionId) {
+      const terms = activeCategoryFilter.filterQuery
+        .toLowerCase()
+        .split(/\s+/)
+        .filter(t => t.length >= 2);
+      if (terms.length > 0) {
+        list = list.filter(m => {
+          const { full: haystack } = getSearchEntry(m);
+          return terms.some(term => haystack.includes(term));
+        });
+      }
+    }
+
     if (selectedPill !== 'all') {
       list = list.filter(m => {
-        const titleAndCat = (m.title + ' ' + m.category + ' ' + (m.description || '')).toLowerCase();
+        const { full: titleAndCat } = getSearchEntry(m);
+        if (selectedPill === 'estadios') return m.sectionId === 'sec-estadios' || titleAndCat.includes('estádio') || titleAndCat.includes('arena') || titleAndCat.includes('maracanã') || titleAndCat.includes('allianz');
+        if (selectedPill === 'canecas') return m.sectionId === 'sec-canecas' || m.sectionId === 'sec-canecas-gamer' || titleAndCat.includes('caneca');
+        if (selectedPill === 'mascotes') return m.sectionId === 'sec-mascotes' || titleAndCat.includes('mascote');
         if (selectedPill === 'action-figures') return m.sectionId === 'sec-destaques-dashboard' || titleAndCat.includes('sonic') || titleAndCat.includes('goku') || titleAndCat.includes('mario') || titleAndCat.includes('wolverine') || titleAndCat.includes('batman') || titleAndCat.includes('sub zero') || titleAndCat.includes('spawn') || titleAndCat.includes('figure');
-        if (selectedPill === 'chaveiros') return titleAndCat.includes('chaveir') || titleAndCat.includes('keychain') || titleAndCat.includes('apertável');
+        if (selectedPill === 'chaveiros') return m.sectionId === 'sec-chaveiros' || titleAndCat.includes('chaveir') || titleAndCat.includes('keychain') || titleAndCat.includes('apertável');
         if (selectedPill === 'geek') return titleAndCat.includes('geek') || titleAndCat.includes('gamer') || titleAndCat.includes('playstation') || titleAndCat.includes('mario');
-        if (selectedPill === 'pokemon') return titleAndCat.includes('pokémon') || titleAndCat.includes('pokemon') || titleAndCat.includes('pikachu') || titleAndCat.includes('charizard');
-        if (selectedPill === 'articulados') return titleAndCat.includes('articulado') || titleAndCat.includes('pocket') || titleAndCat.includes('flex');
-        if (selectedPill === 'estadios') return titleAndCat.includes('estádio') || titleAndCat.includes('arena') || titleAndCat.includes('maracanã') || titleAndCat.includes('allianz');
-        if (selectedPill === 'carros') return titleAndCat.includes('carro') || titleAndCat.includes('veículo') || titleAndCat.includes('fusca') || titleAndCat.includes('mustang');
+        if (selectedPill === 'pokemon') return m.sectionId === 'sec-pokemon' || titleAndCat.includes('pokémon') || titleAndCat.includes('pokemon') || titleAndCat.includes('pikachu') || titleAndCat.includes('charizard');
+        if (selectedPill === 'articulados') return m.sectionId === 'sec-pocket-pals' || titleAndCat.includes('articulado') || titleAndCat.includes('pocket') || titleAndCat.includes('flex');
+        if (selectedPill === 'carros') return m.sectionId === 'sec-carros' || m.sectionId === 'sec-veiculos' || titleAndCat.includes('carro') || titleAndCat.includes('veículo') || titleAndCat.includes('fusca') || titleAndCat.includes('mustang');
         return true;
       });
     }
 
-    // Text Search
     if (deferredSearchQuery.trim()) {
       const q = deferredSearchQuery.toLowerCase();
-      list = list.filter(m => 
-        m.title.toLowerCase().includes(q) ||
-        m.category.toLowerCase().includes(q) ||
-        (m.badge && m.badge.toLowerCase().includes(q)) ||
-        (m.description && m.description.toLowerCase().includes(q))
-      );
+      list = list.filter(m => getSearchEntry(m).full.includes(q));
     }
 
-    // Sorting
+    if (sortBy === 'recent') return list;
+
     return [...list].sort((a, b) => {
       if (sortBy === 'name') return a.title.localeCompare(b.title);
       if (sortBy === 'margin') return (b.suggestedPrice || 0) - (a.suggestedPrice || 0);
       if (sortBy === 'printTime') return (a.printTimeHours || 0) - (b.printTimeHours || 0);
-      return 0; // recent default
+      return 0;
     });
-  }, [modelsList, activeTab, favorites, downloads, selectedSessionFilter, selectedPill, deferredSearchQuery, sortBy]);
+  }, [modelsList, selectedSessionFilter, activeCategoryFilter, selectedPill, deferredSearchQuery, sortBy]);
+
+  const favoriteModels = useMemo(() => {
+    if (activeTab !== 'favorites') return [];
+    return modelsList.filter(m => favoriteSet.has(m.id));
+  }, [activeTab, modelsList, favoriteSet]);
+
+  const filteredModels = activeTab === 'favorites'
+    ? favoriteModels
+    : activeTab === 'downloads'
+    ? downloads
+    : catalogFilteredModels;
 
   // Displayed Models for Pagination
   const displayedModels = useMemo(() => {
@@ -197,49 +290,59 @@ export const MembersArea: React.FC<MembersAreaProps> = ({ currentUser, onLogout 
 
   // Reset pagination on filter changes
   useEffect(() => {
-    setVisibleCount(35);
-  }, [selectedSessionFilter, selectedPill, deferredSearchQuery, sortBy, activeTab]);
+    setVisibleCount(30);
+  }, [selectedSessionFilter, activeCategoryFilter, selectedPill, deferredSearchQuery, sortBy, activeTab]);
 
   // Infinite Scroll Observer
   useEffect(() => {
+    const cur = loadMoreRef.current;
+    if (!cur) return;
     const observer = new IntersectionObserver(
       (entries) => {
         if (entries[0].isIntersecting) {
-          setVisibleCount(prev => (prev < filteredModels.length ? prev + 28 : prev));
+          ensureFullCatalog();
+          setVisibleCount(prev => (prev < filteredModels.length ? prev + 30 : prev));
         }
       },
-      { rootMargin: '400px' }
+      { rootMargin: '500px' }
     );
-    const cur = loadMoreRef.current;
-    if (cur) observer.observe(cur);
-    return () => {
-      if (cur) observer.unobserve(cur);
-    };
-  }, [filteredModels.length]);
+    observer.observe(cur);
+    return () => observer.disconnect();
+  }, [filteredModels.length, ensureFullCatalog]);
 
-  const handleToggleFavorite = (id: string) => {
-    setFavorites(prev => 
+  const handleToggleFavorite = useCallback((id: string) => {
+    setFavorites(prev =>
       prev.includes(id) ? prev.filter(item => item !== id) : [...prev, id]
     );
-  };
+  }, []);
 
-  const handleOpenModel = (model: ModelItem) => {
+  const handleOpenModel = useCallback((model: ModelItem) => {
     setSelectedModel(model);
     setIsDetailModalOpen(true);
-  };
+  }, []);
 
-  const handleDirectDownload = (model: ModelItem) => {
+  const handleDirectDownload = useCallback((model: ModelItem) => {
     setDownloads(prev => {
       if (prev.some(d => d.id === model.id)) return prev;
       return [model, ...prev];
     });
-  };
+  }, []);
+
+  const clearAllFilters = useCallback(() => {
+    setSearchQuery('');
+    setSelectedSessionFilter('all');
+    setActiveCategoryFilter(null);
+    setSelectedPill('all');
+  }, []);
+
+  const displayTotalCount = isFullCatalogLoaded
+    ? modelsList.length
+    : Math.max(modelsList.length, TOTAL_CATALOG_MODELS_COUNT);
 
   return (
     <div className="min-h-screen bg-[#0a0b0e] text-white flex flex-col font-sans select-none antialiased">
-      {/* 1. TOP NAVBAR (EXACT MATCH TO new_ref.png) */}
+      {/* 1. TOP NAVBAR */}
       <header className="sticky top-0 z-40 bg-[#0d0f14]/95 backdrop-blur-md border-b border-[#181a24] px-4 sm:px-6 py-3 flex items-center justify-between gap-4">
-        {/* Left: Mobile menu toggle if needed */}
         <div className="flex items-center gap-3 shrink-0">
           <button
             type="button"
@@ -251,7 +354,7 @@ export const MembersArea: React.FC<MembersAreaProps> = ({ currentUser, onLogout 
           </button>
         </div>
 
-        {/* Center: Search Bar (Exact match to new_ref.png) */}
+        {/* Center: Search Bar */}
         <div className="flex-1 max-w-2xl mx-auto">
           <div className="relative flex items-center">
             <Search className="w-4 h-4 text-neutral-500 absolute left-4 pointer-events-none stroke-[2]" />
@@ -259,7 +362,11 @@ export const MembersArea: React.FC<MembersAreaProps> = ({ currentUser, onLogout 
               ref={searchInputRef}
               type="text"
               value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
+              onFocus={ensureFullCatalog}
+              onChange={(e) => {
+                ensureFullCatalog();
+                setSearchQuery(e.target.value);
+              }}
               placeholder="Pesquisar modelos STL, 3MF, personagens..."
               className="w-full bg-[#13161f] text-neutral-200 text-xs sm:text-sm pl-11 pr-10 py-2.5 sm:py-3 rounded-2xl border border-[#202534] focus:border-[#ff5500] focus:ring-2 focus:ring-[#ff5500]/20 outline-none transition placeholder:text-neutral-500 font-medium shadow-inner"
             />
@@ -276,9 +383,8 @@ export const MembersArea: React.FC<MembersAreaProps> = ({ currentUser, onLogout 
           </div>
         </div>
 
-        {/* Right: Notifications & Meu Perfil Pill (Exact match to new_ref.png) */}
+        {/* Right: Notifications & Meu Perfil Pill */}
         <div className="flex items-center gap-3 shrink-0">
-          {/* Notification Bell with bright orange dot */}
           <button
             type="button"
             onClick={() => setIsNotificationsModalOpen(true)}
@@ -289,7 +395,6 @@ export const MembersArea: React.FC<MembersAreaProps> = ({ currentUser, onLogout 
             <span className="absolute top-2.5 right-2.5 w-2 h-2 rounded-full bg-[#ff5500] ring-2 ring-[#131620]" />
           </button>
 
-          {/* User Profile Pill ("Meu Perfil" with circular avatar icon) */}
           <div className="relative" ref={userMenuRef}>
             <button
               type="button"
@@ -304,7 +409,6 @@ export const MembersArea: React.FC<MembersAreaProps> = ({ currentUser, onLogout 
               </span>
             </button>
 
-            {/* User Dropdown Menu */}
             {isUserMenuOpen && (
               <div className="absolute right-0 mt-2 w-52 bg-[#12141a] border border-[#22252e] rounded-2xl shadow-2xl py-2 z-50 text-left">
                 <div className="px-4 py-2 border-b border-[#1e2129]">
@@ -316,6 +420,7 @@ export const MembersArea: React.FC<MembersAreaProps> = ({ currentUser, onLogout 
                   <button
                     type="button"
                     onClick={() => {
+                      ensureFullCatalog();
                       setActiveTab('favorites');
                       setIsUserMenuOpen(false);
                     }}
@@ -366,45 +471,57 @@ export const MembersArea: React.FC<MembersAreaProps> = ({ currentUser, onLogout 
         </div>
       </header>
 
-      {/* 2. BODY LAYOUT: SIDEBAR + MAIN CONTENT (EXACT MATCH TO ref4.png) */}
+      {/* 2. BODY LAYOUT: SIDEBAR + MAIN CONTENT */}
       <div className="flex-1 flex overflow-hidden">
-        {/* Desktop Left Sidebar */}
         <div className="hidden md:block">
           <Sidebar
             activeTab={activeTab}
             onSelectTab={(tab) => {
+              if (tab === 'favorites') ensureFullCatalog();
               setActiveTab(tab);
-              if (tab === 'catalog') setSelectedSessionFilter('all');
+              if (tab === 'catalog') {
+                setSelectedSessionFilter('all');
+                setSelectedPill('all');
+                setActiveCategoryFilter(null);
+              }
             }}
             selectedCategoryFilter={selectedSessionFilter}
             onSelectCategoryFilter={(catId) => {
+              if (catId !== 'all') ensureFullCatalog();
               setSelectedSessionFilter(catId);
+              setSelectedPill('all');
+              setActiveCategoryFilter(null);
               setActiveTab('catalog');
             }}
             favoritesCount={favorites.length}
             downloadsCount={downloads.length}
             currentUser={currentUser}
             onLogout={onLogout}
+            onOpenSettings={() => setActiveTab('settings')}
+            onOpenCalculator={() => setActiveTab('calculator')}
           />
         </div>
 
-        {/* Mobile Left Sidebar Overlay */}
         {isMobileSidebarOpen && (
           <div className="fixed inset-0 z-50 flex md:hidden">
-            <div 
-              className="fixed inset-0 bg-black/80 backdrop-blur-xs" 
+            <div
+              className="fixed inset-0 bg-black/80 backdrop-blur-xs"
               onClick={() => setIsMobileSidebarOpen(false)}
             />
             <div className="relative z-10 w-64 bg-[#0c0d11] h-full shadow-2xl">
               <Sidebar
                 activeTab={activeTab}
                 onSelectTab={(tab) => {
+                  if (tab === 'favorites') ensureFullCatalog();
                   setActiveTab(tab);
                   setIsMobileSidebarOpen(false);
                 }}
                 selectedCategoryFilter={selectedSessionFilter}
                 onSelectCategoryFilter={(catId) => {
+                  if (catId !== 'all') ensureFullCatalog();
                   setSelectedSessionFilter(catId);
+                  setSelectedPill('all');
+                  setActiveCategoryFilter(null);
                   setActiveTab('catalog');
                   setIsMobileSidebarOpen(false);
                 }}
@@ -412,6 +529,14 @@ export const MembersArea: React.FC<MembersAreaProps> = ({ currentUser, onLogout 
                 downloadsCount={downloads.length}
                 currentUser={currentUser}
                 onLogout={onLogout}
+                onOpenSettings={() => {
+                  setActiveTab('settings');
+                  setIsMobileSidebarOpen(false);
+                }}
+                onOpenCalculator={() => {
+                  setActiveTab('calculator');
+                  setIsMobileSidebarOpen(false);
+                }}
               />
             </div>
           </div>
@@ -419,61 +544,65 @@ export const MembersArea: React.FC<MembersAreaProps> = ({ currentUser, onLogout 
 
         {/* Main Viewport Content */}
         <main className="flex-1 overflow-y-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6 text-left">
-          {/* VIEW: CATALOG (DASHBOARD - EXACT MATCH TO new_ref.png) */}
+          {/* VIEW: CATALOG */}
           {activeTab === 'catalog' && (
             <div className="space-y-8">
-              {/* Top Hero Banner: "BEM-VINDO À CENTRAL 3D" (Exact match new_ref.png) */}
+              {/* Top Hero Banner */}
               <div className="relative rounded-3xl bg-gradient-to-r from-[#141720] via-[#12151e] to-[#181b24] border border-[#222736] p-6 sm:p-8 overflow-hidden shadow-xl">
-                {/* Subtle orange ambient radial flare in background */}
                 <div className="absolute left-1/3 -top-24 w-96 h-96 bg-[#ff5500]/10 rounded-full blur-3xl pointer-events-none" />
 
                 <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 relative z-10">
-                  {/* Left Column: Welcome text and description */}
                   <div className="space-y-3 max-w-2xl text-left">
-                    {/* Badge: ACESSO VITALÍCIO ATIVO */}
                     <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#ff5500]/10 border border-[#ff5500]/40 text-[#ff5500] text-xs font-bold uppercase tracking-wider">
                       <span className="w-3.5 h-3.5 rounded-full border border-current flex items-center justify-center text-[9px] font-black">✓</span>
                       <span>ACESSO VITALÍCIO ATIVO</span>
                     </div>
 
-                    {/* Headline: BEM-VINDO À CENTRAL 3D */}
                     <h1 className="text-2xl sm:text-3xl lg:text-4xl font-black tracking-tight text-white uppercase font-sans">
                       BEM-VINDO À <span className="text-[#ff5500]">CENTRAL 3D</span>
                     </h1>
 
-                    {/* Body Paragraph */}
                     <p className="text-neutral-400 text-xs sm:text-sm font-normal leading-relaxed">
                       Acesse a biblioteca completa de modelos 3D selecionados e testados, organizados por categorias. Encontre seus arquivos favoritos, faça o download direto no Google Drive e descubra novas oportunidades para imprimir e faturar.
                     </p>
                   </div>
 
-                  {/* Right Column: 3 Floating Preview Figures (Sonic Vermelho, Sonic Azul, Sub Zero) */}
+                  {/* Right Column: 3 Floating Preview Figures */}
                   <div className="shrink-0 flex items-center justify-center lg:justify-end">
                     <div className="relative w-72 sm:w-80 h-36 sm:h-40 flex items-center justify-center select-none pointer-events-none">
-                      {/* Left tilted card: Sonic Vermelho */}
                       <div className="absolute left-2 w-28 h-32 rounded-2xl overflow-hidden border border-[#2a2f40] shadow-2xl -rotate-6 transform scale-95 opacity-90 bg-[#0d0f15]">
-                        <img 
-                          src="https://lh3.googleusercontent.com/d/1aPKlJEHTwKUyuzBqPi32OfxK6vjg9nPN" 
-                          alt="Sonic Vermelho" 
-                          className="w-full h-full object-cover" 
+                        <img
+                          src="/front_models/thumb_front-model-sonic-vermelho-1.webp"
+                          alt="Sonic Vermelho"
+                          width={112}
+                          height={128}
+                          decoding="async"
+                          fetchPriority="high"
+                          className="w-full h-full object-contain p-1"
                         />
                       </div>
 
-                      {/* Center card: Sonic Azul (Dominant) */}
                       <div className="absolute z-10 w-32 h-36 rounded-2xl overflow-hidden border-2 border-[#ff5500]/60 shadow-[0_12px_32px_rgba(0,0,0,0.8)] transform scale-105 bg-[#0d0f15]">
-                        <img 
-                          src="https://lh3.googleusercontent.com/d/1U2gs8uDv8s-Ue2BJ8AJa23XpLzT5ee7j" 
-                          alt="Sonic Azul" 
-                          className="w-full h-full object-cover" 
+                        <img
+                          src="/front_models/thumb_front-model-sonic-azul-2.webp"
+                          alt="Sonic Azul"
+                          width={128}
+                          height={144}
+                          decoding="async"
+                          fetchPriority="high"
+                          className="w-full h-full object-contain p-1"
                         />
                       </div>
 
-                      {/* Right tilted card: Sub Zero */}
                       <div className="absolute right-2 w-28 h-32 rounded-2xl overflow-hidden border border-[#2a2f40] shadow-2xl rotate-6 transform scale-95 opacity-90 bg-[#0d0f15]">
-                        <img 
-                          src="https://lh3.googleusercontent.com/d/1iobUId4HNPpHQKDMtVTksE-VEWGh2ZHy" 
-                          alt="Sub Zero" 
-                          className="w-full h-full object-cover" 
+                        <img
+                          src="/front_models/thumb_front-model-sub-zero-3.webp"
+                          alt="Sub Zero"
+                          width={112}
+                          height={128}
+                          decoding="async"
+                          fetchPriority="high"
+                          className="w-full h-full object-contain p-1"
                         />
                       </div>
                     </div>
@@ -481,20 +610,71 @@ export const MembersArea: React.FC<MembersAreaProps> = ({ currentUser, onLogout 
                 </div>
               </div>
 
-              {/* Section Header: Dynamic based on selected category or default Front Models */}
-              <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 pt-2">
+              {/* Quick Filter Pills */}
+              <div className="flex items-center justify-between gap-3 flex-wrap">
+                <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none max-w-full">
+                  {PILL_FILTERS.map((pill) => {
+                    const isActive = selectedPill === pill.id && selectedSessionFilter === 'all' && !activeCategoryFilter;
+                    return (
+                      <button
+                        key={pill.id}
+                        type="button"
+                        onClick={() => {
+                          if (pill.id !== 'all') ensureFullCatalog();
+                          setSelectedPill(pill.id);
+                          setSelectedSessionFilter('all');
+                          setActiveCategoryFilter(null);
+                        }}
+                        className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer shrink-0 border ${
+                          isActive
+                            ? 'bg-[#ff5500] text-white border-[#ff5500] shadow-md shadow-[#ff5500]/25'
+                            : 'bg-[#131620] hover:bg-[#1a1e2b] text-neutral-300 hover:text-white border-[#222736]'
+                        }`}
+                      >
+                        {pill.label}
+                      </button>
+                    );
+                  })}
+                </div>
+
+                <div className="flex items-center gap-2 text-xs">
+                  <select
+                    value={sortBy}
+                    onChange={(e) => {
+                      ensureFullCatalog();
+                      setSortBy(e.target.value as 'recent' | 'name' | 'margin' | 'printTime');
+                    }}
+                    aria-label="Ordenar modelos"
+                    className="bg-[#131620] border border-[#222736] focus:border-[#ff5500] text-neutral-200 text-xs font-semibold rounded-xl px-3 py-1.5 outline-none cursor-pointer"
+                  >
+                    <option value="recent">Mais Recentes</option>
+                    <option value="name">Nome (A - Z)</option>
+                    <option value="margin">Maior Valor Sugerido</option>
+                    <option value="printTime">Menor Tempo</option>
+                  </select>
+                </div>
+              </div>
+
+              {/* Section Header */}
+              <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 pt-1">
                 <div className="space-y-1.5 text-left">
-                  {/* Badge */}
                   <div className="inline-block bg-[#3b170b] text-[#ff7733] border border-[#ff5500]/30 text-[10px] font-black tracking-wider uppercase px-2.5 py-0.5 rounded-md">
-                    {searchQuery ? `RESULTADOS DA BUSCA: ${searchQuery.toUpperCase()}` : selectedSessionFilter !== 'all' ? 'COLEÇÃO FILTRADA' : 'DESTAQUE PRINCIPAL • 51 NOVOS MODELOS'}
+                    {searchQuery
+                      ? `RESULTADOS DA BUSCA: ${searchQuery.toUpperCase()}`
+                      : (selectedSessionFilter !== 'all' || activeCategoryFilter || selectedPill !== 'all')
+                        ? `COLEÇÃO FILTRADA • ${filteredModels.length} MODELOS`
+                        : `DESTAQUE PRINCIPAL • ${displayTotalCount} MODELOS`}
                   </div>
 
-                  {/* Trophy Icon + Section Title */}
                   <div className="flex items-center gap-2.5">
                     <Trophy className="w-6 h-6 text-[#ff5500] stroke-[2.5]" />
                     <h2 className="text-xl sm:text-2xl font-black text-white tracking-tight font-sans">
-                      {searchQuery 
+                      {searchQuery
                         ? `Modelos para "${searchQuery}"`
+                        : activeCategoryFilter
+                        ? activeCategoryFilter.title
+                        : selectedPill !== 'all'
+                        ? PILL_FILTERS.find(p => p.id === selectedPill)?.label || 'Catálogo Filtrado'
                         : selectedSessionFilter === 'sec-chaveiros' ? 'Chaveiros & Keychains 3D'
                         : selectedSessionFilter === 'sec-canecas' ? 'Canecas Térmicas de Time 3D'
                         : selectedSessionFilter === 'sec-canecas-gamer' ? 'Canecas Gamer 3D'
@@ -508,21 +688,16 @@ export const MembersArea: React.FC<MembersAreaProps> = ({ currentUser, onLogout 
                     </h2>
                   </div>
 
-                  {/* Subtitle */}
                   <p className="text-neutral-400 text-xs sm:text-sm font-normal">
                     Modelos 3MF e STL em altíssima resolução fotografados na bancada de estúdio e prontos para fatiar e imprimir.
                   </p>
                 </div>
 
-                {/* Right Orange Action Button: Pasta Completa no Google Drive -> */}
                 <div className="flex items-center gap-2">
-                  {(searchQuery || selectedSessionFilter !== 'all') && (
+                  {(searchQuery || selectedSessionFilter !== 'all' || activeCategoryFilter || selectedPill !== 'all') && (
                     <button
                       type="button"
-                      onClick={() => {
-                        setSearchQuery('');
-                        setSelectedSessionFilter('all');
-                      }}
+                      onClick={clearAllFilters}
                       className="px-4 py-2.5 rounded-xl bg-[#1a1e2b] hover:bg-[#222736] text-neutral-300 text-xs font-bold transition border border-[#2a3042] cursor-pointer"
                     >
                       Ver Todas
@@ -540,22 +715,24 @@ export const MembersArea: React.FC<MembersAreaProps> = ({ currentUser, onLogout 
                 </div>
               </div>
 
-              {/* Search or Active Filter Indicator if filtered */}
-              {(searchQuery || selectedSessionFilter !== 'all') && (
+              {(searchQuery || selectedSessionFilter !== 'all' || activeCategoryFilter || selectedPill !== 'all') && (
                 <div className="flex items-center justify-between text-xs text-neutral-300 bg-[#131620] px-4 py-2.5 rounded-xl border border-[#222736]">
                   <span className="flex items-center gap-2">
                     <span className="w-2 h-2 rounded-full bg-[#ff5500]" />
                     <span>Filtro ativo:</span>
                     <strong className="text-white">
-                      {searchQuery ? `"${searchQuery}"` : selectedSessionFilter}
+                      {searchQuery
+                        ? `"${searchQuery}"`
+                        : activeCategoryFilter
+                        ? activeCategoryFilter.title
+                        : selectedPill !== 'all'
+                        ? PILL_FILTERS.find(p => p.id === selectedPill)?.label
+                        : selectedSessionFilter}
                     </strong>
                   </span>
                   <button
                     type="button"
-                    onClick={() => {
-                      setSearchQuery('');
-                      setSelectedSessionFilter('all');
-                    }}
+                    onClick={clearAllFilters}
                     className="text-[#ff5500] hover:underline font-bold text-xs cursor-pointer"
                   >
                     Limpar filtro
@@ -563,7 +740,7 @@ export const MembersArea: React.FC<MembersAreaProps> = ({ currentUser, onLogout 
                 </div>
               )}
 
-              {/* 5-COLUMN CARDS GRID (EXACT MATCH TO new_ref.png) */}
+              {/* 5-COLUMN CARDS GRID */}
               {displayedModels.length === 0 ? (
                 <div className="py-20 text-center space-y-3 bg-[#131620] rounded-2xl border border-[#222736] p-8">
                   <Box className="w-10 h-10 text-neutral-600 mx-auto stroke-[1.5]" />
@@ -573,7 +750,7 @@ export const MembersArea: React.FC<MembersAreaProps> = ({ currentUser, onLogout 
                   </p>
                   <button
                     type="button"
-                    onClick={() => setSearchQuery('')}
+                    onClick={clearAllFilters}
                     className="px-4 py-2 bg-[#ff5500] text-white font-bold text-xs rounded-xl shadow-sm cursor-pointer"
                   >
                     Ver Todos os Modelos
@@ -581,14 +758,13 @@ export const MembersArea: React.FC<MembersAreaProps> = ({ currentUser, onLogout 
                 </div>
               ) : (
                 <div className="space-y-8">
-                  {/* Grid of exactly 5 cards per row matching new_ref.png */}
                   <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3.5 sm:gap-4">
                     {displayedModels.map((model, index) => (
                       <ModelCard
                         key={model.id}
                         model={model}
-                        priority={index < 25}
-                        isFavorite={favorites.includes(model.id)}
+                        priority={index < 10}
+                        isFavorite={favoriteSet.has(model.id)}
                         onToggleFavorite={handleToggleFavorite}
                         onOpenDetails={handleOpenModel}
                         onDirectDownload={handleDirectDownload}
@@ -596,17 +772,18 @@ export const MembersArea: React.FC<MembersAreaProps> = ({ currentUser, onLogout 
                     ))}
                   </div>
 
-                  {/* Sentinel for infinite scroll */}
                   {visibleCount < filteredModels.length && (
                     <div ref={loadMoreRef} className="h-6 w-full pointer-events-none" />
                   )}
 
-                  {/* Load more button */}
                   {visibleCount < filteredModels.length && (
                     <div className="text-center pt-2">
                       <button
                         type="button"
-                        onClick={() => setVisibleCount(prev => prev + 25)}
+                        onClick={() => {
+                          ensureFullCatalog();
+                          setVisibleCount(prev => prev + 30);
+                        }}
                         className="px-6 py-2.5 bg-[#141720] hover:bg-[#1a1e2b] text-neutral-300 hover:text-white border border-[#232838] hover:border-[#ff5500] text-xs font-bold rounded-xl transition cursor-pointer"
                       >
                         Carregar Mais Modelos
@@ -618,52 +795,60 @@ export const MembersArea: React.FC<MembersAreaProps> = ({ currentUser, onLogout 
             </div>
           )}
 
-          {/* VIEW: TODAS CATEGORIAS (EXACT MATCH TO USER IMAGES cat_ref1, cat_ref2, cat_ref3) */}
+          {/* VIEW: TODAS CATEGORIAS */}
           {activeTab === 'all-files' && (
-            <CategoriesTab
-              onSelectCategory={(cat: CategoryItem) => {
-                if (cat.sectionId) {
-                  setSelectedSessionFilter(cat.sectionId);
-                } else {
-                  setSelectedSessionFilter('all');
-                }
-                setSearchQuery(cat.filterQuery.split(' ')[0]);
-                setActiveTab('catalog');
-              }}
-              onOpenDrive={(url) => window.open(url, '_blank', 'noopener,noreferrer')}
-            />
-          )}
-
-          {/* VIEW: PLANOS E BÔNUS (14 SEÇÕES DE BÔNUS NO ESTILO ref3.png) */}
-          {activeTab === 'bonus' && (
-            <div className="space-y-6">
-              <div className="flex items-center justify-between border-b border-[#181a22] pb-4">
-                <div className="space-y-1">
-                  <h1 className="font-serif text-2xl sm:text-3xl font-normal text-white tracking-tight">
-                    Planos & Bônus Exclusivos
-                  </h1>
-                  <p className="text-xs sm:text-sm text-neutral-400 font-normal">
-                    Acesse as 14 coleções de arquivos STL e 3MF com imagens quadradas e temas organizados.
-                  </p>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => setActiveTab('catalog')}
-                  className="text-xs text-[#e5a95d] hover:underline font-bold cursor-pointer"
-                >
-                  ← Voltar à Biblioteca
-                </button>
-              </div>
-
-              {/* 14 Blocos em 2 Colunas */}
-              <BonusSectionsGrid
-                onSelectSection={(catId) => {
-                  setSelectedSessionFilter(catId);
+            <Suspense fallback={TabLoadingFallback}>
+              <CategoriesTab
+                onSelectCategory={(cat: CategoryItem) => {
+                  ensureFullCatalog();
+                  setSelectedPill('all');
+                  setSearchQuery('');
+                  if (cat.sectionId) {
+                    setSelectedSessionFilter(cat.sectionId);
+                    setActiveCategoryFilter(null);
+                  } else {
+                    setSelectedSessionFilter('all');
+                    setActiveCategoryFilter(cat);
+                  }
                   setActiveTab('catalog');
                 }}
                 onOpenDrive={(url) => window.open(url, '_blank', 'noopener,noreferrer')}
               />
-            </div>
+            </Suspense>
+          )}
+
+          {/* VIEW: PLANOS E BÔNUS */}
+          {activeTab === 'bonus' && (
+            <Suspense fallback={TabLoadingFallback}>
+              <div className="space-y-6">
+                <div className="flex items-center justify-between border-b border-[#181a22] pb-4">
+                  <div className="space-y-1">
+                    <h1 className="font-serif text-2xl sm:text-3xl font-normal text-white tracking-tight">
+                      Planos & Bônus Exclusivos
+                    </h1>
+                    <p className="text-xs sm:text-sm text-neutral-400 font-normal">
+                      Acesse as 14 coleções de arquivos STL e 3MF com imagens quadradas e temas organizados.
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setActiveTab('catalog')}
+                    className="text-xs text-[#e5a95d] hover:underline font-bold cursor-pointer"
+                  >
+                    ← Voltar à Biblioteca
+                  </button>
+                </div>
+
+                <BonusSectionsGrid
+                  onSelectSection={(catId) => {
+                    ensureFullCatalog();
+                    setSelectedSessionFilter(catId);
+                    setActiveTab('catalog');
+                  }}
+                  onOpenDrive={(url) => window.open(url, '_blank', 'noopener,noreferrer')}
+                />
+              </div>
+            </Suspense>
           )}
 
           {/* VIEW: MEUS FAVORITOS */}
@@ -721,54 +906,83 @@ export const MembersArea: React.FC<MembersAreaProps> = ({ currentUser, onLogout 
 
           {/* VIEW: MEUS DOWNLOADS */}
           {activeTab === 'downloads' && (
-            <div className="space-y-6">
-              <div className="flex items-center justify-between border-b border-[#181a22] pb-4">
-                <div className="space-y-1">
-                  <h1 className="font-serif text-2xl sm:text-3xl font-normal text-white tracking-tight">
-                    Meus Downloads
-                  </h1>
-                  <p className="text-xs sm:text-sm text-neutral-400 font-normal">
-                    Histórico de arquivos e pastas STL acessados recentemente.
-                  </p>
+            <Suspense fallback={TabLoadingFallback}>
+              <div className="space-y-6">
+                <div className="flex items-center justify-between border-b border-[#181a22] pb-4">
+                  <div className="space-y-1">
+                    <h1 className="font-serif text-2xl sm:text-3xl font-normal text-white tracking-tight">
+                      Meus Downloads
+                    </h1>
+                    <p className="text-xs sm:text-sm text-neutral-400 font-normal">
+                      Histórico de arquivos e pastas STL acessados recentemente.
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setActiveTab('catalog')}
+                    className="text-xs text-[#e5a95d] hover:underline font-bold cursor-pointer"
+                  >
+                    ← Voltar à Biblioteca
+                  </button>
                 </div>
-                <button
-                  type="button"
-                  onClick={() => setActiveTab('catalog')}
-                  className="text-xs text-[#e5a95d] hover:underline font-bold cursor-pointer"
-                >
-                  ← Voltar à Biblioteca
-                </button>
-              </div>
 
-              <DownloadsTab
-                downloadedModels={downloads}
-                onClearDownloads={() => setDownloads([])}
-                onOpenModel={handleOpenModel}
-                onReDownload={handleDirectDownload}
-                onBrowseCatalog={() => setActiveTab('catalog')}
+                <DownloadsTab
+                  downloadedModels={downloads}
+                  onClearDownloads={() => setDownloads([])}
+                  onOpenModel={handleOpenModel}
+                  onReDownload={handleDirectDownload}
+                  onBrowseCatalog={() => setActiveTab('catalog')}
+                />
+              </div>
+            </Suspense>
+          )}
+
+          {/* VIEW: CALCULADORA */}
+          {activeTab === 'calculator' && (
+            <Suspense fallback={TabLoadingFallback}>
+              <ProfitCalculator
+                onSelectProduct={(title) => {
+                  ensureFullCatalog();
+                  setSearchQuery(title.split(' ')[0]);
+                  setActiveTab('catalog');
+                }}
               />
-            </div>
+            </Suspense>
+          )}
+
+          {/* VIEW: CONFIGURAÇÕES */}
+          {activeTab === 'settings' && (
+            <Suspense fallback={TabLoadingFallback}>
+              <SettingsTab
+                favoriteCount={favorites.length}
+                onClearFavorites={() => setFavorites([])}
+              />
+            </Suspense>
           )}
         </main>
       </div>
 
-      {/* 3. MODAIS: Detalhes 3D e Notificações */}
+      {/* 3. MODAIS (Lazy-loaded on open) */}
       {isDetailModalOpen && selectedModel && (
-        <ModelDetailModal
-          model={selectedModel}
-          isOpen={isDetailModalOpen}
-          isFavorite={favorites.includes(selectedModel.id)}
-          onClose={() => setIsDetailModalOpen(false)}
-          onToggleFavorite={handleToggleFavorite}
-          onRecordDownload={handleDirectDownload}
-        />
+        <Suspense fallback={null}>
+          <ModelDetailModal
+            model={selectedModel}
+            isOpen={isDetailModalOpen}
+            isFavorite={favoriteSet.has(selectedModel.id)}
+            onClose={() => setIsDetailModalOpen(false)}
+            onToggleFavorite={handleToggleFavorite}
+            onRecordDownload={handleDirectDownload}
+          />
+        </Suspense>
       )}
 
       {isNotificationsModalOpen && (
-        <NotificationsModal
-          isOpen={isNotificationsModalOpen}
-          onClose={() => setIsNotificationsModalOpen(false)}
-        />
+        <Suspense fallback={null}>
+          <NotificationsModal
+            isOpen={isNotificationsModalOpen}
+            onClose={() => setIsNotificationsModalOpen(false)}
+          />
+        </Suspense>
       )}
     </div>
   );

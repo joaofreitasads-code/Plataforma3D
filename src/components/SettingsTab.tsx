@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { User, ShieldCheck, Download, Sliders, CheckCircle2, HardDrive, Printer, Sparkles, RefreshCw, Key } from 'lucide-react';
-import { VIP_DRIVE_MAIN_URL } from '../data/modelsData';
+import { VIP_DRIVE_MAIN_URL } from '../data/catalogMeta';
 
 interface SettingsTabProps {
   favoriteCount: number;

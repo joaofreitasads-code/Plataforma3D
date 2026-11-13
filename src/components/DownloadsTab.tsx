@@ -1,6 +1,6 @@
 import React from 'react';
 import { Download, ExternalLink, HardDrive, Trash2, Box } from 'lucide-react';
-import { ModelItem, VIP_DRIVE_MAIN_URL } from '../data/modelsData';
+import { ModelItem, VIP_DRIVE_MAIN_URL } from '../data/catalogMeta';
 import { getOptimizedCardImageUrl } from '../utils/imageOptimizer';
 
 interface DownloadsTabProps {

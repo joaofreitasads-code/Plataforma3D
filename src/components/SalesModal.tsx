@@ -1,6 +1,6 @@
 import React from 'react';
 import { X, Check, ShieldCheck, Zap, HardDrive, Sparkles, HelpCircle, ArrowRight, Crown, Lock } from 'lucide-react';
-import { VIP_DRIVE_MAIN_URL } from '../data/modelsData';
+import { VIP_DRIVE_MAIN_URL } from '../data/catalogMeta';
 
 const CHECKOUT_VIP_URL = 'https://checkout.wiven.com.br/checkout/cmupyvej300i601pll6oi9cj1?offer=BX0N8TV';
 const PRODUCT_IMG_URL = '/product_checkout.webp';

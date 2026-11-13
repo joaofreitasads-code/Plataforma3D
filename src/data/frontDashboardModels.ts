@@ -1,4 +1,4 @@
-import type { ModelItem } from './modelsData';
+import type { ModelItem } from './catalogMeta';
 
 export const FRONT_DASHBOARD_MODELS: ModelItem[] = [
   {

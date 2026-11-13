@@ -11,7 +11,7 @@ export const OFFICIAL_CATEGORIES: CategoryItem[] = [
   {
     id: 'action-figures-3d',
     title: 'ACTION FIGURES & GEEK',
-    image: 'https://lh3.googleusercontent.com/d/1aPKlJEHTwKUyuzBqPi32OfxK6vjg9nPN',
+    image: '/front_models/thumb_front-model-sonic-vermelho-1.webp',
     filterQuery: 'sonic goku mario wolverine batman spawn',
     sectionId: 'sec-destaques-dashboard'
   },
@@ -25,7 +25,7 @@ export const OFFICIAL_CATEGORIES: CategoryItem[] = [
   {
     id: 'canecas-de-times',
     title: 'CANECAS DE TIMES',
-    image: 'https://i.imgur.com/guXbpbS.png',
+    image: '/canecas_times/thumb_guXbpbS.webp',
     filterQuery: 'caneca time times futebol flamengo corinthians palmeiras são paulo santos vasco grêmio internacional cruzeiro atlético bahia fortaleza ceará sport',
     sectionId: 'sec-canecas'
   },

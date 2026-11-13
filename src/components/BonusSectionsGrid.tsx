@@ -29,6 +29,7 @@ export const BonusSectionsGrid: React.FC<BonusSectionsGridProps> = ({
               <img
                 src={section.image}
                 alt={section.title}
+                referrerPolicy="no-referrer"
                 loading="lazy"
                 decoding="async"
                 className="w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-300"

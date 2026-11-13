@@ -404,7 +404,7 @@ export const AllFilesTab: React.FC<AllFilesTabProps> = ({
                   <ModelCard
                     key={model.id}
                     model={model}
-                    priority={index < 24}
+                    priority={index < 8}
                     isFavorite={favorites.includes(model.id)}
                     onToggleFavorite={onToggleFavorite}
                     onOpenDetails={onOpenModel}

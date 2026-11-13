@@ -1,139 +1,228 @@
-import React, { useState } from 'react';
-import { Model3D } from '../types/model';
-import { CARD_BG_URL, resolveImageUrl } from '../data/models';
-import { ChevronLeft, ChevronRight, Star, Box } from 'lucide-react';
+import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
+import { ChevronLeft, ChevronRight, Lock } from 'lucide-react';
+import { ModelItem, VIP_DRIVE_MAIN_URL } from '../data/catalogMeta';
+import { getOptimizedCardImageUrl } from '../utils/imageOptimizer';
+import { ThematicSVGPreview } from './ThematicSVGPreview';
 
 interface ModelCardProps {
-  model: Model3D;
+  model: ModelItem;
   isFavorite: boolean;
   onToggleFavorite: (id: string) => void;
-  onOpenDetails: (model: Model3D) => void;
-  onDownloadDrive: (model: Model3D) => void;
+  onOpenDetails: (model: ModelItem) => void;
+  onDirectDownload?: (model: ModelItem) => void;
+  priority?: boolean;
+  orangeVariant?: boolean;
 }
 
-export const ModelCard: React.FC<ModelCardProps> = ({
+const CARD_BG_FALLBACK = 'https://i.imgur.com/dxozWx0.png';
+
+const ModelCardComponent: React.FC<ModelCardProps> = ({
   model,
   isFavorite,
   onToggleFavorite,
   onOpenDetails,
-  onDownloadDrive,
+  onDirectDownload,
+  priority = false,
 }) => {
-  // Collect available images
-  const allImages = React.useMemo(() => {
+  const allImages = useMemo(() => {
     const list: string[] = [];
-    if (model.imageUrl) {
-      const resolved = resolveImageUrl(model.imageUrl, model);
-      if (resolved && resolved !== CARD_BG_URL) list.push(resolved);
-    }
-    if (model.images && Array.isArray(model.images)) {
-      model.images.forEach((img) => {
-        const resolved = resolveImageUrl(img, model);
-        if (resolved && resolved !== CARD_BG_URL && !list.includes(resolved)) {
-          list.push(resolved);
-        }
-      });
+    if (model.thumbnailUrl) list.push(model.thumbnailUrl);
+    if (model.imageUrl && !list.includes(model.imageUrl)) list.push(model.imageUrl);
+    if (model.images && model.images.length > 0) {
+      for (let i = 0; i < model.images.length; i++) {
+        const img = model.images[i];
+        if (img && !list.includes(img)) list.push(img);
+      }
     }
     return list;
-  }, [model]);
+  }, [model.thumbnailUrl, model.imageUrl, model.images]);
 
-  const [activeImgIndex, setActiveImgIndex] = useState(0);
-  const [imgError, setImgError] = useState(false);
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  const [imageError, setImageError] = useState(false);
+  const [fallbackAttempt, setFallbackAttempt] = useState(0);
+  const [bgSrc, setBgSrc] = useState('/model_card_bg.webp');
+  const retryTimerRef = useRef<number | null>(null);
 
-  React.useEffect(() => {
-    setImgError(false);
-    setActiveImgIndex(0);
-  }, [model.id]);
+  const rawSrc = currentImageIndex < allImages.length
+    ? allImages[currentImageIndex]
+    : (model.thumbnailUrl || model.imageUrl || '');
 
-  const handlePrevImage = (e: React.MouseEvent) => {
+  const currentSrc = useMemo(() => {
+    return getOptimizedCardImageUrl(rawSrc, fallbackAttempt, 240);
+  }, [rawSrc, fallbackAttempt]);
+
+  const clearRetryTimer = useCallback(() => {
+    if (retryTimerRef.current !== null) {
+      window.clearTimeout(retryTimerRef.current);
+      retryTimerRef.current = null;
+    }
+  }, []);
+
+  useEffect(() => {
+    return () => clearRetryTimer();
+  }, [clearRetryTimer]);
+
+  useEffect(() => {
+    setImageError(false);
+  }, [currentSrc]);
+
+  const handleImageError = useCallback(() => {
+    const advanceFallback = () => {
+      if (fallbackAttempt < 4) {
+        setFallbackAttempt(prev => prev + 1);
+        return;
+      }
+      if (currentImageIndex < allImages.length - 1) {
+        setFallbackAttempt(0);
+        setCurrentImageIndex(prev => prev + 1);
+        return;
+      }
+      setImageError(true);
+    };
+
+    if (currentSrc && !currentSrc.startsWith('/')) {
+      clearRetryTimer();
+      const delay = fallbackAttempt === 0 ? 180 : 380;
+      retryTimerRef.current = window.setTimeout(advanceFallback, delay);
+    } else {
+      advanceFallback();
+    }
+  }, [fallbackAttempt, currentImageIndex, allImages.length, currentSrc, clearRetryTimer]);
+
+  const handlePrevImage = useCallback((e: React.MouseEvent) => {
     e.stopPropagation();
-    setActiveImgIndex((prev) => (prev > 0 ? prev - 1 : allImages.length - 1));
-  };
+    clearRetryTimer();
+    setImageError(false);
+    setFallbackAttempt(0);
+    setCurrentImageIndex(prev => (prev - 1 + allImages.length) % allImages.length);
+  }, [clearRetryTimer, allImages.length]);
 
-  const handleNextImage = (e: React.MouseEvent) => {
+  const handleNextImage = useCallback((e: React.MouseEvent) => {
     e.stopPropagation();
-    setActiveImgIndex((prev) => (prev < allImages.length - 1 ? prev + 1 : 0));
-  };
+    clearRetryTimer();
+    setImageError(false);
+    setFallbackAttempt(0);
+    setCurrentImageIndex(prev => (prev + 1) % allImages.length);
+  }, [clearRetryTimer, allImages.length]);
 
-  const badgeText = model.badge || (model.category ? model.category.toUpperCase() : 'VIP EXCLUSIVO');
-  const specText =
-    model.scale ||
-    model.dimensions ||
-    (model.weightGrams ? `Aprox. ${model.weightGrams}g` : 'Arquivo 3MF / STL Otimizado');
+  const handleAccessFolder = useCallback((e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (onDirectDownload) onDirectDownload(model);
+    window.open(model.driveUrl || VIP_DRIVE_MAIN_URL, '_blank', 'noopener,noreferrer');
+  }, [onDirectDownload, model]);
 
-  const hasForegroundImage = allImages.length > 0 && !imgError;
-  const isCaneca = (model.category || '').toLowerCase().includes('caneca') || (model.title || '').toLowerCase().includes('caneca');
-  const imgFitClass = isCaneca
-    ? 'w-full h-full object-contain p-2'
-    : 'w-full h-full object-cover object-center';
+  const isVipCheckout = model.id === 'produto-vip-vitalicio-cadeado';
+  const hasPhoto = Boolean(currentSrc && !imageError);
+  const badgeText = model.badge || (model.stlFiles?.some(f => f.name.endsWith('.3mf')) ? '3MF' : 'STL');
+
+  const isCutoutOrSvg = Boolean(
+    currentSrc && (
+      currentSrc.endsWith('.svg') ||
+      currentSrc.includes('pocket-pals') ||
+      currentSrc.includes('canecas_times') ||
+      currentSrc.includes('front_models') ||
+      currentSrc.includes('chaveiros') ||
+      currentSrc.toLowerCase().includes('.png') ||
+      currentSrc.includes('imgur.com')
+    )
+  );
 
   return (
     <article
-      onClick={() => onOpenDetails(model)}
-      className="group rounded-2xl overflow-hidden cursor-pointer transition-all duration-200 flex flex-col justify-between text-left bg-[#141720] hover:bg-[#181c27] border border-[#202534] hover:border-[#ff5500]/60 hover:shadow-[0_12px_28px_rgba(0,0,0,0.6)] relative will-change-transform select-none"
+      onClick={() => {
+        if (isVipCheckout) {
+          window.open(model.driveUrl || 'https://checkout.wiven.com.br/checkout/cmupyvej300i601pll6oi9cj1?offer=BX0N8TV', '_blank', 'noopener,noreferrer');
+        } else {
+          onOpenDetails(model);
+        }
+      }}
+      className="group rounded-2xl overflow-hidden cursor-pointer transition-colors duration-150 flex flex-col justify-between text-left bg-[#141720] hover:bg-[#181c27] border border-[#202534] hover:border-[#ff5500]/60 hover:shadow-[0_12px_28px_rgba(0,0,0,0.6)] relative [contain:layout_style_paint] select-none"
     >
-      {/* Image container */}
+      {/* Top Image Container */}
       <div className="w-full aspect-square relative overflow-hidden bg-[#0d0f14] flex items-center justify-center group/image select-none">
-        {/* Background texture/grid */}
+        {/* Studio Wooden Table Background */}
         <img
+          src={bgSrc}
+          width={300}
+          height={300}
+          loading={priority ? 'eager' : 'lazy'}
+          decoding="async"
+          onError={() => {
+            if (bgSrc !== CARD_BG_FALLBACK) {
+              setBgSrc(CARD_BG_FALLBACK);
+            }
+          }}
           alt=""
           aria-hidden="true"
-          referrerPolicy="no-referrer"
-          className="absolute inset-0 w-full h-full object-cover object-center pointer-events-none select-none z-0 transition-transform duration-500 group-hover:scale-105"
-          src={CARD_BG_URL}
+          className={`absolute inset-0 w-full h-full object-cover object-center pointer-events-none select-none z-0 ${
+            isCutoutOrSvg || !hasPhoto ? 'transition-transform duration-500 group-hover:scale-105' : ''
+          }`}
         />
 
-        {/* Model 3D Image */}
-        {hasForegroundImage ? (
+        {hasPhoto ? (
           <img
+            src={currentSrc}
             alt={model.title}
+            width={300}
+            height={300}
             referrerPolicy="no-referrer"
-            loading="lazy"
+            loading={priority ? 'eager' : 'lazy'}
             decoding="async"
-            className={`${imgFitClass} relative z-10 transition-transform duration-300 group-hover:scale-105 drop-shadow-[0_10px_20px_rgba(0,0,0,0.65)]`}
-            src={allImages[activeImgIndex]}
-            onError={() => setImgError(true)}
+            fetchPriority={priority ? 'high' : 'low'}
+            onError={handleImageError}
+            className={
+              isCutoutOrSvg
+                ? "w-full h-full object-contain p-2 relative z-10 transition-transform duration-300 group-hover:scale-105 drop-shadow-[0_6px_12px_rgba(0,0,0,0.55)]"
+                : "w-full h-full object-cover object-center relative z-10 transition-transform duration-300 group-hover:scale-[1.03]"
+            }
           />
         ) : (
-          <div className="relative z-10 flex flex-col items-center justify-center p-4 text-center pointer-events-none">
-            <div className="w-12 h-12 rounded-2xl bg-black/60 backdrop-blur-md border border-[#ff5500]/40 flex items-center justify-center shadow-xl group-hover:scale-110 transition-transform duration-300">
-              <Box className="w-6 h-6 text-[#ff5500]" />
-            </div>
-            <span className="mt-2 text-[10px] font-black tracking-widest uppercase text-white/95 bg-black/75 px-2.5 py-0.5 rounded-md border border-white/10 shadow-sm">
-              STL · 3MF VIP
-            </span>
+          <ThematicSVGPreview
+            sectionId={model.sectionId}
+            title={model.title}
+            colorTheme={model.colorTheme}
+            isHot={model.isHot}
+          />
+        )}
+
+        {/* VIP Badge for VIP Checkout only */}
+        {isVipCheckout && (
+          <div className="absolute top-2.5 left-2.5 z-20 bg-[#ff5500] text-white font-black text-[10px] px-2 py-0.5 rounded-md flex items-center gap-1 shadow-md uppercase tracking-wider pointer-events-none">
+            <Lock className="w-3 h-3 stroke-[2.5]" />
+            <span>ACESSO VIP</span>
           </div>
         )}
 
-        {/* Favorite Button */}
+        {/* Top-Left: Circular Star Favorite Button */}
         <button
           type="button"
           onClick={(e) => {
             e.stopPropagation();
             onToggleFavorite(model.id);
           }}
-          className={`absolute top-2.5 left-2.5 w-7 h-7 rounded-full backdrop-blur-md transition-all z-20 flex items-center justify-center border cursor-pointer ${
+          className={`absolute top-2.5 left-2.5 w-7 h-7 rounded-full transition-all z-20 flex items-center justify-center ${
             isFavorite
-              ? 'bg-[#ff5500] text-white border-[#ff5500] shadow-md shadow-[#ff5500]/40'
-              : 'bg-black/50 hover:bg-black/80 text-white/90 hover:text-white border-white/10'
+              ? 'bg-[#ff5500] text-white shadow-md scale-105'
+              : 'bg-black/65 hover:bg-black/85 text-white/90 hover:text-white border border-white/15'
           }`}
-          title={isFavorite ? 'Remover dos favoritos' : 'Salvar nos favoritos'}
-          aria-label={isFavorite ? 'Remover dos favoritos' : 'Salvar nos favoritos'}
+          title={isFavorite ? "Remover dos favoritos" : "Salvar nos favoritos"}
+          aria-label={isFavorite ? "Remover dos favoritos" : "Salvar nos favoritos"}
         >
-          <Star className={`w-3.5 h-3.5 ${isFavorite ? 'fill-current' : ''}`} />
+          <span className="text-xs leading-none">★</span>
         </button>
 
-        {/* Category tag badge */}
-        <div className="absolute bottom-2.5 left-2.5 z-20 bg-black/75 backdrop-blur-md text-[#38bdf8] text-[10px] font-bold px-2 py-0.5 rounded-md border border-[#0284c7]/40 pointer-events-none shadow-sm">
-          {badgeText}
+        {/* Bottom-Left: Format / Badge Pill */}
+        <div className="absolute bottom-2.5 left-2.5 z-20 bg-black/80 text-[#38bdf8] text-[10px] font-bold px-2 py-0.5 rounded-md border border-[#0284c7]/40 pointer-events-none shadow-sm">
+          {model.badge || badgeText}
         </div>
 
-        {/* Carousel controls if more than 1 image */}
+        {/* Multi-Image Controls if available */}
         {allImages.length > 1 && (
           <>
             <button
               type="button"
               onClick={handlePrevImage}
-              className="absolute left-1 top-1/2 -translate-y-1/2 p-1 rounded-full bg-black/80 hover:bg-white text-white hover:text-black border border-white/20 opacity-0 group-hover/image:opacity-100 transition-all z-20 cursor-pointer"
+              className="absolute left-1 top-1/2 -translate-y-1/2 p-1 rounded-full bg-black/80 hover:bg-white text-white hover:text-black border border-white/20 opacity-0 group-hover/image:opacity-100 transition-opacity z-20 cursor-pointer"
               title="Foto anterior"
             >
               <ChevronLeft className="w-3 h-3 stroke-[2.5]" />
@@ -141,7 +230,7 @@ export const ModelCard: React.FC<ModelCardProps> = ({
             <button
               type="button"
               onClick={handleNextImage}
-              className="absolute right-1 top-1/2 -translate-y-1/2 p-1 rounded-full bg-black/80 hover:bg-white text-white hover:text-black border border-white/20 opacity-0 group-hover/image:opacity-100 transition-all z-20 cursor-pointer"
+              className="absolute right-1 top-1/2 -translate-y-1/2 p-1 rounded-full bg-black/80 hover:bg-white text-white hover:text-black border border-white/20 opacity-0 group-hover/image:opacity-100 transition-opacity z-20 cursor-pointer"
               title="Próxima foto"
             >
               <ChevronRight className="w-3 h-3 stroke-[2.5]" />
@@ -150,7 +239,7 @@ export const ModelCard: React.FC<ModelCardProps> = ({
         )}
       </div>
 
-      {/* Card Info */}
+      {/* Card Body */}
       <div className="p-3.5 flex flex-col justify-between flex-1 gap-2.5 bg-[#141720]">
         <div className="space-y-1">
           <h3
@@ -161,7 +250,7 @@ export const ModelCard: React.FC<ModelCardProps> = ({
           </h3>
 
           <div className="flex items-center gap-1.5 text-xs text-neutral-400 font-medium truncate">
-            <span>{model.category}</span>
+            <span>{model.category.replace(' 3D', '')}</span>
             <span>·</span>
             <span>{badgeText}</span>
             <span>·</span>
@@ -169,24 +258,21 @@ export const ModelCard: React.FC<ModelCardProps> = ({
 
           <div className="pt-0.5">
             <span className="inline-block bg-[#0f2438] text-[#38bdf8] text-[10px] font-semibold px-2 py-0.5 rounded-md border border-[#0284c7]/30">
-              {specText}
+              {model.scale || model.dimensions || 'Escala 1:10'}
             </span>
           </div>
         </div>
 
-        {/* Action footer */}
         <div className="flex items-center justify-between pt-2 border-t border-[#1e2330] text-xs">
           <button
             type="button"
-            onClick={(e) => {
-              e.stopPropagation();
-              onDownloadDrive(model);
-            }}
+            onClick={handleAccessFolder}
             className="text-[#ff5500] hover:text-[#ff7733] font-bold tracking-wide uppercase flex items-center gap-1 transition-colors cursor-pointer text-[11px]"
           >
             <span>BAIXAR NO DRIVE</span>
             <span className="text-sm">→</span>
           </button>
+
           <span className="text-neutral-400 hover:text-neutral-200 transition-colors text-xs font-normal">
             Ver detalhes
           </span>
@@ -195,3 +281,11 @@ export const ModelCard: React.FC<ModelCardProps> = ({
     </article>
   );
 };
+
+export const ModelCard = React.memo(ModelCardComponent, (prev, next) => {
+  return (
+    prev.model.id === next.model.id &&
+    prev.isFavorite === next.isFavorite &&
+    prev.priority === next.priority
+  );
+});
