@@ -1,10 +1,12 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import {
   getOptimizedCardImageUrl,
   getCachedBlobUrl,
   fetchSameOriginImageAsBlobUrl,
   shouldPreferBlobFetch,
   markPreferBlobFetch,
+  getCachedLocalFallback,
+  loadLocalImageFallback,
 } from '../utils/imageOptimizer';
 
 interface ResilientImgProps extends React.ImgHTMLAttributes<HTMLImageElement> {
@@ -24,54 +26,81 @@ export const ResilientImg: React.FC<ResilientImgProps> = ({
   ...rest
 }) => {
   const [attempt, setAttempt] = useState(0);
-  const [blobOverride, setBlobOverride] = useState<{ forUrl: string; blobUrl: string } | null>(null);
+  const [resolvedOverride, setResolvedOverride] = useState<{ forUrl: string; src: string } | null>(null);
   const [usedExternalFallback, setUsedExternalFallback] = useState(false);
+  const latestCandidateRef = useRef<string>('');
 
-  const candidateSrc = usedExternalFallback && externalFallback
-    ? externalFallback
-    : (rawSrc.startsWith('/') ? rawSrc : getOptimizedCardImageUrl(rawSrc, attempt, targetWidth));
+  const candidateSrc =
+    usedExternalFallback && externalFallback
+      ? externalFallback
+      : rawSrc.startsWith('/')
+      ? rawSrc
+      : getOptimizedCardImageUrl(rawSrc, attempt, targetWidth);
 
-  const cachedBlob = candidateSrc.startsWith('/') ? getCachedBlobUrl(candidateSrc) : null;
-  const activeBlobUrl =
-    blobOverride && blobOverride.forUrl === candidateSrc ? blobOverride.blobUrl : cachedBlob;
-  const displaySrc = activeBlobUrl || candidateSrc;
+  latestCandidateRef.current = candidateSrc;
+
+  const cachedSync = candidateSrc.startsWith('/')
+    ? getCachedLocalFallback(candidateSrc) || getCachedBlobUrl(candidateSrc)
+    : null;
+  const activeOverride =
+    resolvedOverride && resolvedOverride.forUrl === candidateSrc
+      ? resolvedOverride.src
+      : cachedSync;
+  const displaySrc = activeOverride || candidateSrc;
 
   useEffect(() => {
     setAttempt(0);
-    setBlobOverride(null);
+    setResolvedOverride(null);
     setUsedExternalFallback(false);
   }, [rawSrc]);
 
   useEffect(() => {
-    if (!candidateSrc.startsWith('/') || activeBlobUrl || !shouldPreferBlobFetch()) return;
+    if (!candidateSrc.startsWith('/') || activeOverride || !shouldPreferBlobFetch()) return;
     let cancelled = false;
-    fetchSameOriginImageAsBlobUrl(candidateSrc).then((blobUrl) => {
-      if (!cancelled && blobUrl) {
-        setBlobOverride({ forUrl: candidateSrc, blobUrl });
+    const captured = candidateSrc;
+    fetchSameOriginImageAsBlobUrl(captured).then((blobUrl) => {
+      if (cancelled || latestCandidateRef.current !== captured) return;
+      if (blobUrl) {
+        setResolvedOverride({ forUrl: captured, src: blobUrl });
+        return;
       }
+      loadLocalImageFallback(captured).then((dataUri) => {
+        if (!cancelled && dataUri && latestCandidateRef.current === captured) {
+          setResolvedOverride({ forUrl: captured, src: dataUri });
+        }
+      });
     });
     return () => {
       cancelled = true;
     };
-  }, [candidateSrc, activeBlobUrl]);
+  }, [candidateSrc, activeOverride]);
 
   const handleError = useCallback(
     (e: React.SyntheticEvent<HTMLImageElement, Event>) => {
-      if (candidateSrc.startsWith('/') && !activeBlobUrl) {
+      const captured = candidateSrc;
+      if (captured.startsWith('/') && !activeOverride) {
         markPreferBlobFetch();
-        fetchSameOriginImageAsBlobUrl(candidateSrc).then((blobUrl) => {
+        fetchSameOriginImageAsBlobUrl(captured).then((blobUrl) => {
+          if (latestCandidateRef.current !== captured) return;
           if (blobUrl) {
-            setBlobOverride({ forUrl: candidateSrc, blobUrl });
+            setResolvedOverride({ forUrl: captured, src: blobUrl });
             return;
           }
-          if (!rawSrc.startsWith('/') && attempt < 4) {
-            setAttempt((prev) => prev + 1);
-          } else if (externalFallback && !usedExternalFallback) {
-            setUsedExternalFallback(true);
-          } else {
-            onFinalError?.();
-            onError?.(e);
-          }
+          loadLocalImageFallback(captured).then((dataUri) => {
+            if (latestCandidateRef.current !== captured) return;
+            if (dataUri) {
+              setResolvedOverride({ forUrl: captured, src: dataUri });
+              return;
+            }
+            if (!rawSrc.startsWith('/') && attempt < 4) {
+              setAttempt((prev) => prev + 1);
+            } else if (externalFallback && !usedExternalFallback) {
+              setUsedExternalFallback(true);
+            } else {
+              onFinalError?.();
+              onError?.(e);
+            }
+          });
         });
         return;
       }
@@ -89,7 +118,7 @@ export const ResilientImg: React.FC<ResilientImgProps> = ({
       onFinalError?.();
       onError?.(e);
     },
-    [candidateSrc, activeBlobUrl, rawSrc, attempt, externalFallback, usedExternalFallback, onFinalError, onError]
+    [candidateSrc, activeOverride, rawSrc, attempt, externalFallback, usedExternalFallback, onFinalError, onError]
   );
 
   return (

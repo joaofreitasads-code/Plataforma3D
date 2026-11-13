@@ -7,6 +7,8 @@ import {
   fetchSameOriginImageAsBlobUrl,
   shouldPreferBlobFetch,
   markPreferBlobFetch,
+  getCachedLocalFallback,
+  loadLocalImageFallback,
 } from '../utils/imageOptimizer';
 import { ResilientImg } from './ResilientImg';
 import { ThematicSVGPreview } from './ThematicSVGPreview';
@@ -59,9 +61,11 @@ const ModelCardComponent: React.FC<ModelCardProps> = ({
 
   latestSrcRef.current = currentSrc;
 
-  const cachedBlobUrl = currentSrc.startsWith('/') ? getCachedBlobUrl(currentSrc) : null;
+  const cachedSync = currentSrc.startsWith('/')
+    ? getCachedLocalFallback(currentSrc) || getCachedBlobUrl(currentSrc)
+    : null;
   const activeBlobUrl =
-    blobOverride && blobOverride.forUrl === currentSrc ? blobOverride.blobUrl : cachedBlobUrl;
+    blobOverride && blobOverride.forUrl === currentSrc ? blobOverride.blobUrl : cachedSync;
   const displaySrc = activeBlobUrl || currentSrc;
 
   const clearRetryTimer = useCallback(() => {
@@ -92,9 +96,16 @@ const ModelCardComponent: React.FC<ModelCardProps> = ({
     let cancelled = false;
     const capturedSrc = currentSrc;
     fetchSameOriginImageAsBlobUrl(capturedSrc).then((blobUrl) => {
-      if (!cancelled && blobUrl && latestSrcRef.current === capturedSrc) {
+      if (cancelled || latestSrcRef.current !== capturedSrc) return;
+      if (blobUrl) {
         setBlobOverride({ forUrl: capturedSrc, blobUrl });
+        return;
       }
+      loadLocalImageFallback(capturedSrc).then((dataUri) => {
+        if (!cancelled && dataUri && latestSrcRef.current === capturedSrc) {
+          setBlobOverride({ forUrl: capturedSrc, blobUrl: dataUri });
+        }
+      });
     });
     return () => {
       cancelled = true;
@@ -128,8 +139,15 @@ const ModelCardComponent: React.FC<ModelCardProps> = ({
           setBlobOverride({ forUrl: capturedSrc, blobUrl });
           return;
         }
-        clearRetryTimer();
-        retryTimerRef.current = window.setTimeout(advanceFallback, isLocalPath ? 180 : 60);
+        loadLocalImageFallback(capturedSrc).then((dataUri) => {
+          if (latestSrcRef.current !== capturedSrc) return;
+          if (dataUri) {
+            setBlobOverride({ forUrl: capturedSrc, blobUrl: dataUri });
+            return;
+          }
+          clearRetryTimer();
+          retryTimerRef.current = window.setTimeout(advanceFallback, isLocalPath ? 180 : 60);
+        });
       });
       return;
     }

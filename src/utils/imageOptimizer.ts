@@ -57,13 +57,13 @@ export function getOptimizedCardImageUrl(
 
   switch (attempt) {
     case 0:
-      return `/api/img?id=${encodeURIComponent(id)}&sz=${size}`;
-    case 1:
       return `https://lh3.googleusercontent.com/d/${id}=s${size}-rw`;
+    case 1:
+      return `https://drive.google.com/thumbnail?id=${id}&sz=w${size}`;
     case 2:
       return `https://lh3.googleusercontent.com/d/${id}=s${size}`;
     case 3:
-      return `https://drive.google.com/thumbnail?id=${id}&sz=w${size}`;
+      return `/api/img?id=${encodeURIComponent(id)}&sz=${size}`;
     default:
       return `https://lh3.googleusercontent.com/d/${id}`;
   }
@@ -96,13 +96,13 @@ export function getOptimizedModalImageUrl(
 
   switch (attempt) {
     case 0:
-      return `/api/img?id=${encodeURIComponent(id)}&sz=640`;
-    case 1:
       return `https://lh3.googleusercontent.com/d/${id}=s640-rw`;
+    case 1:
+      return `https://drive.google.com/thumbnail?id=${id}&sz=w700`;
     case 2:
       return `https://lh3.googleusercontent.com/d/${id}=s640`;
     case 3:
-      return `https://drive.google.com/thumbnail?id=${id}&sz=w700`;
+      return `/api/img?id=${encodeURIComponent(id)}&sz=640`;
     default:
       return `https://lh3.googleusercontent.com/d/${id}`;
   }
@@ -209,6 +209,98 @@ export function fetchSameOriginImageAsBlobUrl(url: string): Promise<string | nul
 
   inFlightBlobFetches.set(url, promise);
   return promise;
+}
+
+// --- Lazy JS chunk fallback for local public/* images ---
+// Zero bytes in initial bundle; only downloaded on-demand if both <img> and fetch() fail for a local image path.
+type FallbackGroup = 'front' | 'canecas' | 'other' | 'ui';
+const loadedFallbackMaps: Partial<Record<FallbackGroup, Record<string, string>>> = {};
+const fallbackGroupPromises: Partial<Record<FallbackGroup, Promise<Record<string, string>>>> = {};
+const preferredFallbackGroups = new Set<FallbackGroup>();
+
+function normalizeLocalPath(rawUrl: string): string {
+  const qIdx = rawUrl.indexOf('?');
+  return qIdx >= 0 ? rawUrl.slice(0, qIdx) : rawUrl;
+}
+
+function getFallbackGroup(cleanPath: string): FallbackGroup | null {
+  if (cleanPath.startsWith('/front_models/') || cleanPath === '/model_card_bg.webp') return 'front';
+  if (
+    cleanPath.startsWith('/canecas/') ||
+    cleanPath.startsWith('/canecas-gamer/') ||
+    cleanPath.startsWith('/canecas_times/') ||
+    cleanPath === '/caneca_flamengo.svg' ||
+    cleanPath === '/caneca_selecao.svg'
+  ) {
+    return 'canecas';
+  }
+  if (
+    cleanPath.startsWith('/chaveiros/') ||
+    cleanPath.startsWith('/pocket-pals/') ||
+    cleanPath.startsWith('/estadios/') ||
+    cleanPath.startsWith('/mascotes/') ||
+    cleanPath.startsWith('/fe3d/')
+  ) {
+    return 'other';
+  }
+  if (
+    cleanPath.startsWith('/categories/') ||
+    cleanPath.startsWith('/bonus/') ||
+    cleanPath === '/youtube_video_aula_thumb.webp' ||
+    cleanPath === '/product_checkout.webp' ||
+    cleanPath === '/banner_preview_mugs.webp'
+  ) {
+    return 'ui';
+  }
+  return null;
+}
+
+export function getCachedLocalFallback(rawUrl: string | undefined | null): string | null {
+  if (!rawUrl || !rawUrl.startsWith('/')) return null;
+  const clean = normalizeLocalPath(rawUrl);
+  const group = getFallbackGroup(clean);
+  if (!group || !preferredFallbackGroups.has(group)) return null;
+  const map = loadedFallbackMaps[group];
+  return map ? (map[clean] || null) : null;
+}
+
+export async function loadLocalImageFallback(rawUrl: string | undefined | null): Promise<string | null> {
+  if (!rawUrl || !rawUrl.startsWith('/')) return null;
+  const clean = normalizeLocalPath(rawUrl);
+  const group = getFallbackGroup(clean);
+  if (!group) return null;
+
+  preferredFallbackGroups.add(group);
+  const existing = loadedFallbackMaps[group];
+  if (existing) {
+    return existing[clean] || null;
+  }
+
+  let loader = fallbackGroupPromises[group];
+  if (!loader) {
+    loader = (async () => {
+      try {
+        let mod: { default: Record<string, string> };
+        if (group === 'front') {
+          mod = await import('../data/fallbacks/frontModelsFallback');
+        } else if (group === 'canecas') {
+          mod = await import('../data/fallbacks/canecasFallback');
+        } else if (group === 'other') {
+          mod = await import('../data/fallbacks/otherModelsFallback');
+        } else {
+          mod = await import('../data/fallbacks/uiAssetsFallback');
+        }
+        loadedFallbackMaps[group] = mod.default || {};
+        return loadedFallbackMaps[group]!;
+      } catch {
+        return {};
+      }
+    })();
+    fallbackGroupPromises[group] = loader;
+  }
+
+  const map = await loader;
+  return map[clean] || null;
 }
 
 export function isImageCached(_url: string): boolean {

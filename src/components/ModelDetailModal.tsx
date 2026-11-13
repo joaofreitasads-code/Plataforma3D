@@ -7,6 +7,8 @@ import {
   fetchSameOriginImageAsBlobUrl,
   shouldPreferBlobFetch,
   markPreferBlobFetch,
+  getCachedLocalFallback,
+  loadLocalImageFallback,
 } from '../utils/imageOptimizer';
 import { ResilientImg } from './ResilientImg';
 import { ThematicSVGPreview } from './ThematicSVGPreview';
@@ -56,9 +58,11 @@ export const ModelDetailModal: React.FC<ModelDetailModalProps> = ({
   const currentSrc = getOptimizedModalImageUrl(rawSrc, fallbackAttempt);
   latestSrcRef.current = currentSrc;
 
-  const cachedBlobUrl = currentSrc.startsWith('/') ? getCachedBlobUrl(currentSrc) : null;
+  const cachedSync = currentSrc.startsWith('/')
+    ? getCachedLocalFallback(currentSrc) || getCachedBlobUrl(currentSrc)
+    : null;
   const activeBlobUrl =
-    blobOverride && blobOverride.forUrl === currentSrc ? blobOverride.blobUrl : cachedBlobUrl;
+    blobOverride && blobOverride.forUrl === currentSrc ? blobOverride.blobUrl : cachedSync;
   const displaySrc = activeBlobUrl || currentSrc;
 
   useEffect(() => {
@@ -73,9 +77,16 @@ export const ModelDetailModal: React.FC<ModelDetailModalProps> = ({
     let cancelled = false;
     const capturedSrc = currentSrc;
     fetchSameOriginImageAsBlobUrl(capturedSrc).then((blobUrl) => {
-      if (!cancelled && blobUrl && latestSrcRef.current === capturedSrc) {
+      if (cancelled || latestSrcRef.current !== capturedSrc) return;
+      if (blobUrl) {
         setBlobOverride({ forUrl: capturedSrc, blobUrl });
+        return;
       }
+      loadLocalImageFallback(capturedSrc).then((dataUri) => {
+        if (!cancelled && dataUri && latestSrcRef.current === capturedSrc) {
+          setBlobOverride({ forUrl: capturedSrc, blobUrl: dataUri });
+        }
+      });
     });
     return () => {
       cancelled = true;
@@ -114,7 +125,14 @@ export const ModelDetailModal: React.FC<ModelDetailModalProps> = ({
           setBlobOverride({ forUrl: capturedSrc, blobUrl });
           return;
         }
-        advanceFallback();
+        loadLocalImageFallback(capturedSrc).then((dataUri) => {
+          if (latestSrcRef.current !== capturedSrc) return;
+          if (dataUri) {
+            setBlobOverride({ forUrl: capturedSrc, blobUrl: dataUri });
+            return;
+          }
+          advanceFallback();
+        });
       });
       return;
     }
