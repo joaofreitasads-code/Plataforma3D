@@ -1,10 +1,8 @@
-import React, { useState, useEffect, lazy, Suspense } from 'react';
-import { LoginScreen } from './components/LoginScreen';
-import { MembersAreaSkeleton } from './components/MembersAreaSkeleton';
+import React, { useState, lazy, Suspense } from 'react';
+import { MembersArea } from './components/MembersArea';
 import { MemberUser, STORAGE_USER_KEY } from './types/auth';
 
-const loadMembersArea = () => import('./components/MembersArea');
-const MembersArea = lazy(loadMembersArea);
+const LoginScreen = lazy(() => import('./components/LoginScreen').then(m => ({ default: m.LoginScreen })));
 
 function getInitialUser(): MemberUser | null {
   try {
@@ -28,30 +26,8 @@ function getInitialUser(): MemberUser | null {
   }
 }
 
-const INITIAL_USER = getInitialUser();
-// Start loading MembersArea chunk immediately in parallel if user is already logged in
-if (INITIAL_USER) {
-  loadMembersArea().catch(() => {});
-}
-
 export default function App() {
-  const [currentUser, setCurrentUser] = useState<MemberUser | null>(INITIAL_USER);
-
-  useEffect(() => {
-    if (!currentUser) {
-      const preload = () => {
-        loadMembersArea().catch(() => {});
-      };
-
-      if (typeof window !== 'undefined' && 'requestIdleCallback' in window) {
-        const handle = (window as any).requestIdleCallback(preload, { timeout: 1200 });
-        return () => (window as any).cancelIdleCallback(handle);
-      } else {
-        const timer = setTimeout(preload, 300);
-        return () => clearTimeout(timer);
-      }
-    }
-  }, [currentUser]);
+  const [currentUser, setCurrentUser] = useState<MemberUser | null>(getInitialUser);
 
   const handleLogin = (user: MemberUser) => {
     try {
@@ -73,12 +49,12 @@ export default function App() {
   };
 
   if (!currentUser) {
-    return <LoginScreen onLogin={handleLogin} />;
+    return (
+      <Suspense fallback={<div className="min-h-screen bg-[#0b0c0e]" />}>
+        <LoginScreen onLogin={handleLogin} />
+      </Suspense>
+    );
   }
 
-  return (
-    <Suspense fallback={<MembersAreaSkeleton />}>
-      <MembersArea currentUser={currentUser} onLogout={handleLogout} />
-    </Suspense>
-  );
+  return <MembersArea currentUser={currentUser} onLogout={handleLogout} />;
 }

@@ -14,8 +14,6 @@ interface ModelCardProps {
   orangeVariant?: boolean;
 }
 
-const CARD_BG_FALLBACK = 'https://i.imgur.com/dxozWx0.png';
-
 const ModelCardComponent: React.FC<ModelCardProps> = ({
   model,
   isFavorite,
@@ -40,7 +38,6 @@ const ModelCardComponent: React.FC<ModelCardProps> = ({
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [imageError, setImageError] = useState(false);
   const [fallbackAttempt, setFallbackAttempt] = useState(0);
-  const [bgSrc, setBgSrc] = useState('/model_card_bg.webp');
   const retryTimerRef = useRef<number | null>(null);
 
   const rawSrc = currentImageIndex < allImages.length
@@ -66,9 +63,10 @@ const ModelCardComponent: React.FC<ModelCardProps> = ({
     setImageError(false);
   }, [currentSrc]);
 
+  // Fast failure recovery: max 2 resized CDN attempts per URL before falling back cleanly to SVG preview
   const handleImageError = useCallback(() => {
     const advanceFallback = () => {
-      if (fallbackAttempt < 4) {
+      if (fallbackAttempt < 1) {
         setFallbackAttempt(prev => prev + 1);
         return;
       }
@@ -82,8 +80,7 @@ const ModelCardComponent: React.FC<ModelCardProps> = ({
 
     if (currentSrc && !currentSrc.startsWith('/')) {
       clearRetryTimer();
-      const delay = fallbackAttempt === 0 ? 180 : 380;
-      retryTimerRef.current = window.setTimeout(advanceFallback, delay);
+      retryTimerRef.current = window.setTimeout(advanceFallback, 150);
     } else {
       advanceFallback();
     }
@@ -138,27 +135,8 @@ const ModelCardComponent: React.FC<ModelCardProps> = ({
       }}
       className="group rounded-2xl overflow-hidden cursor-pointer transition-colors duration-150 flex flex-col justify-between text-left bg-[#141720] hover:bg-[#181c27] border border-[#202534] hover:border-[#ff5500]/60 hover:shadow-[0_12px_28px_rgba(0,0,0,0.6)] relative [contain:layout_style_paint] select-none"
     >
-      {/* Top Image Container */}
-      <div className="w-full aspect-square relative overflow-hidden bg-[#0d0f14] flex items-center justify-center group/image select-none">
-        {/* Studio Wooden Table Background */}
-        <img
-          src={bgSrc}
-          width={300}
-          height={300}
-          loading={priority ? 'eager' : 'lazy'}
-          decoding="async"
-          onError={() => {
-            if (bgSrc !== CARD_BG_FALLBACK) {
-              setBgSrc(CARD_BG_FALLBACK);
-            }
-          }}
-          alt=""
-          aria-hidden="true"
-          className={`absolute inset-0 w-full h-full object-cover object-center pointer-events-none select-none z-0 ${
-            isCutoutOrSvg || !hasPhoto ? 'transition-transform duration-500 group-hover:scale-105' : ''
-          }`}
-        />
-
+      {/* Top Image Container with CSS Studio Wooden Table Background (avoids 2x <img> DOM nodes) */}
+      <div className="w-full aspect-square relative overflow-hidden bg-[#0d0f14] bg-[url('/model_card_bg.webp')] bg-cover bg-center flex items-center justify-center group/image select-none">
         {hasPhoto ? (
           <img
             src={currentSrc}
@@ -168,7 +146,7 @@ const ModelCardComponent: React.FC<ModelCardProps> = ({
             referrerPolicy="no-referrer"
             loading={priority ? 'eager' : 'lazy'}
             decoding="async"
-            fetchPriority={priority ? 'high' : 'low'}
+            fetchPriority={priority ? 'high' : 'auto'}
             onError={handleImageError}
             className={
               isCutoutOrSvg

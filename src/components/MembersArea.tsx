@@ -37,17 +37,28 @@ const PILL_FILTERS = [
   { id: 'carros', label: 'Carros & Veículos' },
 ];
 
-// Progressive background loader for the full 1,355-model catalog
+// Progressive background loader for the full 1,355-model catalog via fast static JSON (205KB gzipped, off-main-thread JSON parse)
 let cachedFullModels: ModelItem[] | null = null;
 let fullModelsPromise: Promise<ModelItem[]> | null = null;
 
 function loadFullCatalog(): Promise<ModelItem[]> {
   if (cachedFullModels) return Promise.resolve(cachedFullModels);
   if (!fullModelsPromise) {
-    fullModelsPromise = import('../data/modelsData').then((mod) => {
-      cachedFullModels = mod.ALL_MODELS;
-      return mod.ALL_MODELS;
-    });
+    fullModelsPromise = fetch('/catalog-extra.json')
+      .then((res) => {
+        if (!res.ok) throw new Error('HTTP ' + res.status);
+        return res.json() as Promise<ModelItem[]>;
+      })
+      .then((extra) => {
+        cachedFullModels = [...FRONT_DASHBOARD_MODELS, ...extra];
+        return cachedFullModels;
+      })
+      .catch(() =>
+        import('../data/modelsData').then((mod) => {
+          cachedFullModels = mod.ALL_MODELS;
+          return mod.ALL_MODELS;
+        })
+      );
   }
   return fullModelsPromise;
 }
@@ -85,7 +96,7 @@ export const MembersArea: React.FC<MembersAreaProps> = ({ currentUser, onLogout 
   const [selectedSessionFilter, setSelectedSessionFilter] = useState<string>('all');
   const [activeCategoryFilter, setActiveCategoryFilter] = useState<CategoryItem | null>(null);
   const [sortBy, setSortBy] = useState<'recent' | 'name' | 'margin' | 'printTime'>('recent');
-  const [visibleCount, setVisibleCount] = useState<number>(30);
+  const [visibleCount, setVisibleCount] = useState<number>(20);
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
 
   const searchInputRef = useRef<HTMLInputElement>(null);
@@ -108,15 +119,24 @@ export const MembersArea: React.FC<MembersAreaProps> = ({ currentUser, onLogout 
       .catch(() => {});
   }, [isFullCatalogLoaded]);
 
-  // Hydrate full 1,355-model catalog right after initial paint so frame 1 stays near-instant
+  // Hydrate full catalog in background only AFTER page finishes initial load/paint
   useEffect(() => {
     if (isFullCatalogLoaded) return;
-    if (typeof window !== 'undefined' && 'requestIdleCallback' in window) {
-      const handle = (window as unknown as { requestIdleCallback: (cb: () => void, opts?: { timeout: number }) => number }).requestIdleCallback(ensureFullCatalog, { timeout: 150 });
-      return () => (window as unknown as { cancelIdleCallback: (id: number) => void }).cancelIdleCallback(handle);
-    }
-    const timer = globalThis.setTimeout(ensureFullCatalog, 50);
-    return () => globalThis.clearTimeout(timer);
+    let idleId: number | null = null;
+    const scheduleFetch = () => {
+      if (typeof window !== 'undefined' && 'requestIdleCallback' in window) {
+        idleId = (window as unknown as { requestIdleCallback: (cb: () => void, opts?: { timeout: number }) => number }).requestIdleCallback(ensureFullCatalog, { timeout: 2500 });
+      } else {
+        ensureFullCatalog();
+      }
+    };
+    const timer = globalThis.setTimeout(scheduleFetch, 900);
+    return () => {
+      globalThis.clearTimeout(timer);
+      if (idleId !== null && typeof window !== 'undefined' && 'cancelIdleCallback' in window) {
+        (window as unknown as { cancelIdleCallback: (id: number) => void }).cancelIdleCallback(idleId);
+      }
+    };
   }, [isFullCatalogLoaded, ensureFullCatalog]);
 
   // Global Ctrl + K shortcut to focus search bar
@@ -290,7 +310,7 @@ export const MembersArea: React.FC<MembersAreaProps> = ({ currentUser, onLogout 
 
   // Reset pagination on filter changes
   useEffect(() => {
-    setVisibleCount(30);
+    setVisibleCount(20);
   }, [selectedSessionFilter, activeCategoryFilter, selectedPill, deferredSearchQuery, sortBy, activeTab]);
 
   // Infinite Scroll Observer
@@ -301,10 +321,10 @@ export const MembersArea: React.FC<MembersAreaProps> = ({ currentUser, onLogout 
       (entries) => {
         if (entries[0].isIntersecting) {
           ensureFullCatalog();
-          setVisibleCount(prev => (prev < filteredModels.length ? prev + 30 : prev));
+          setVisibleCount(prev => (prev < filteredModels.length ? prev + 25 : prev));
         }
       },
-      { rootMargin: '500px' }
+      { rootMargin: '250px' }
     );
     observer.observe(cur);
     return () => observer.disconnect();
@@ -763,7 +783,7 @@ export const MembersArea: React.FC<MembersAreaProps> = ({ currentUser, onLogout 
                       <ModelCard
                         key={model.id}
                         model={model}
-                        priority={index < 10}
+                        priority={index < 5}
                         isFavorite={favoriteSet.has(model.id)}
                         onToggleFavorite={handleToggleFavorite}
                         onOpenDetails={handleOpenModel}
