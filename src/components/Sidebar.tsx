@@ -102,7 +102,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
             <span>Todas Categorias</span>
           </div>
           <span className="text-[11px] font-bold px-2 py-0.5 rounded-md bg-[#161922] text-neutral-400 border border-[#222736]">
-            42
+            43
           </span>
         </button>
 

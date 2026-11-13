@@ -28475,6 +28475,7 @@ export const MASCOTES_MODELS: ModelItem[] = [
 ];
 
 import { FRONT_DASHBOARD_MODELS } from './frontDashboardModels';
+import { GTA6_MODELS } from './gta6Models';
 import { CANECAS_MODELS } from './canecasModels';
 import { RPG_MODELS } from './rpgModels';
 import { CENARIOS_MODELS } from './cenariosModels';
@@ -28487,6 +28488,7 @@ import { POCKET_PALS_MODELS } from './pocketPalsModels';
 
 export const ALL_MODELS: ModelItem[] = [
   ...FRONT_DASHBOARD_MODELS,
+  ...GTA6_MODELS,
   ...CANECAS_MODELS,
   ...CANECAS_GAMER_MODELS,
   ...CHAVEIROS_MODELS,

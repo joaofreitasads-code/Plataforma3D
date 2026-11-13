@@ -7,6 +7,13 @@ export interface CategoryItem {
 }
 
 export const OFFICIAL_CATEGORIES: CategoryItem[] = [
+  {
+    id: 'gta-6-3d',
+    title: 'GTA 6 & VICE CITY 3D',
+    image: '/gta6/002-gta-vi-lightbox.webp',
+    filterQuery: 'gta 6 gta vi vice city lucia jason macca',
+    sectionId: 'sec-gta6'
+  },
   // ROW 1 (cat_ref1)
   {
     id: 'action-figures-3d',

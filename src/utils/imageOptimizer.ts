@@ -213,7 +213,7 @@ export function fetchSameOriginImageAsBlobUrl(url: string): Promise<string | nul
 
 // --- Lazy JS chunk fallback for local public/* images ---
 // Zero bytes in initial bundle; only downloaded on-demand if both <img> and fetch() fail for a local image path.
-type FallbackGroup = 'front' | 'canecas' | 'other' | 'ui';
+type FallbackGroup = 'front' | 'canecas' | 'other' | 'ui' | 'gta6';
 const loadedFallbackMaps: Partial<Record<FallbackGroup, Record<string, string>>> = {};
 const fallbackGroupPromises: Partial<Record<FallbackGroup, Promise<Record<string, string>>>> = {};
 const preferredFallbackGroups = new Set<FallbackGroup>();
@@ -225,6 +225,7 @@ function normalizeLocalPath(rawUrl: string): string {
 
 function getFallbackGroup(cleanPath: string): FallbackGroup | null {
   if (cleanPath.startsWith('/front_models/') || cleanPath === '/model_card_bg.webp') return 'front';
+  if (cleanPath.startsWith('/gta6/')) return 'gta6';
   if (
     cleanPath.startsWith('/canecas/') ||
     cleanPath.startsWith('/canecas-gamer/') ||
@@ -283,6 +284,8 @@ export async function loadLocalImageFallback(rawUrl: string | undefined | null):
         let mod: { default: Record<string, string> };
         if (group === 'front') {
           mod = await import('../data/fallbacks/frontModelsFallback');
+        } else if (group === 'gta6') {
+          mod = await import('../data/fallbacks/gta6Fallback');
         } else if (group === 'canecas') {
           mod = await import('../data/fallbacks/canecasFallback');
         } else if (group === 'other') {

@@ -1,7 +1,7 @@
 import React, { useState, useMemo, useEffect, useRef, useDeferredValue, useCallback, lazy, Suspense } from 'react';
 import {
   Search, Bell, Heart, Menu, X, Box, LogOut,
-  Crown, Download, ExternalLink, User, Trophy
+  Crown, Download, ExternalLink, User, Trophy, Lock
 } from 'lucide-react';
 import { ModelItem, VIP_DRIVE_MAIN_URL, TOTAL_CATALOG_MODELS_COUNT } from '../data/catalogMeta';
 import { FRONT_DASHBOARD_MODELS } from '../data/frontDashboardModels';
@@ -27,6 +27,7 @@ interface MembersAreaProps {
 
 const PILL_FILTERS = [
   { id: 'all', label: 'Todos' },
+  { id: 'gta6', label: 'GTA 6' },
   { id: 'estadios', label: 'Estádios 3D' },
   { id: 'canecas', label: 'Canecas de Time' },
   { id: 'mascotes', label: 'Mascotes' },
@@ -228,6 +229,7 @@ export const MembersArea: React.FC<MembersAreaProps> = ({ currentUser, onLogout 
       const sf = selectedSessionFilter.toLowerCase();
       list = list.filter(m => {
         const { category: cat, full: titleAndDesc } = getSearchEntry(m);
+        if (sf === 'sec-gta6' || sf === 'gta6') return m.sectionId === 'sec-gta6' || cat.includes('gta');
         if (sf === 'sec-chaveiros' || sf === 'chaveiros') return m.sectionId === 'sec-chaveiros' || cat.includes('chaveir');
         if (sf === 'sec-canecas' || sf === 'canecas') return m.sectionId === 'sec-canecas' || cat.includes('caneca');
         if (sf === 'sec-portacopos' || sf === 'utilitarios') return m.sectionId === 'sec-portacopos' || cat.includes('copos') || cat.includes('latas') || titleAndDesc.includes('organizador');
@@ -265,6 +267,7 @@ export const MembersArea: React.FC<MembersAreaProps> = ({ currentUser, onLogout 
     if (selectedPill !== 'all') {
       list = list.filter(m => {
         const { full: titleAndCat } = getSearchEntry(m);
+        if (selectedPill === 'gta6') return m.sectionId === 'sec-gta6' || titleAndCat.includes('gta 6') || titleAndCat.includes('gta vi') || titleAndCat.includes('vice city');
         if (selectedPill === 'estadios') return m.sectionId === 'sec-estadios' || titleAndCat.includes('estádio') || titleAndCat.includes('arena') || titleAndCat.includes('maracanã') || titleAndCat.includes('allianz');
         if (selectedPill === 'canecas') return m.sectionId === 'sec-canecas' || m.sectionId === 'sec-canecas-gamer' || titleAndCat.includes('caneca');
         if (selectedPill === 'mascotes') return m.sectionId === 'sec-mascotes' || titleAndCat.includes('mascote');
@@ -565,6 +568,69 @@ export const MembersArea: React.FC<MembersAreaProps> = ({ currentUser, onLogout 
 
         {/* Main Viewport Content */}
         <main className="flex-1 overflow-y-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6 text-left">
+          {/* Top Locked Promotional Banners: Vitrine 3D PRO & Aceleração de Resultados */}
+          <section aria-label="Ferramentas Exclusivas" className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-5">
+            <a
+              href="https://vitrine3dpro.netlify.app/"
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label="Acessar Vitrine 3D PRO"
+              className="block relative w-full aspect-video rounded-2xl sm:rounded-3xl overflow-hidden border border-[#222736] hover:border-[#ff5500]/70 bg-[#0d0f15] shadow-2xl transition-all duration-200 group cursor-pointer"
+            >
+              <ResilientImg
+                rawSrc="/vitrine-3d-pro-banner.webp"
+                externalFallback="https://i.imgur.com/sEYpBeF.png"
+                alt="Vitrine 3D PRO - Gerador de Anúncios com IA"
+                width={1280}
+                height={720}
+                loading="eager"
+                decoding="async"
+                fetchPriority="high"
+                className="w-full h-full object-cover object-center transition-transform duration-300 group-hover:scale-[1.015]"
+              />
+
+              {/* Transparent Glass Padlock Overlay */}
+              <div className="absolute inset-0 bg-black/25 group-hover:bg-black/35 backdrop-blur-[1px] transition-all duration-200 flex flex-col items-center justify-center gap-2 p-4">
+                <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-full bg-black/40 backdrop-blur-md border border-white/25 group-hover:border-[#ff5500]/80 group-hover:bg-black/55 group-hover:scale-105 transition-all duration-200 flex items-center justify-center shadow-[0_8px_32px_rgba(0,0,0,0.5)]">
+                  <Lock className="w-6 h-6 sm:w-7 sm:h-7 text-white/90 group-hover:text-[#ff5500] stroke-[2] transition-colors" />
+                </div>
+                <span className="px-3 py-1 rounded-full bg-black/50 backdrop-blur-md border border-white/15 text-white/90 group-hover:text-white group-hover:border-[#ff5500]/50 text-[11px] font-bold uppercase tracking-wider shadow-lg transition-colors">
+                  Vitrine 3D PRO • Clique para Acessar
+                </span>
+              </div>
+            </a>
+
+            <a
+              href="https://financeiraa.netlify.app/"
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label="Acessar Dashboard Financeiro - Aceleração de Resultados"
+              className="block relative w-full aspect-video rounded-2xl sm:rounded-3xl overflow-hidden border border-[#222736] hover:border-[#ff5500]/70 bg-[#0d0f15] shadow-2xl transition-all duration-200 group cursor-pointer"
+            >
+              <ResilientImg
+                rawSrc="/aceleracao-financeira-banner.webp"
+                externalFallback="https://i.imgur.com/DUHRDeh.png"
+                alt="Aceleração de Resultados - Dashboard Financeiro"
+                width={1280}
+                height={720}
+                loading="eager"
+                decoding="async"
+                fetchPriority="high"
+                className="w-full h-full object-cover object-center transition-transform duration-300 group-hover:scale-[1.015]"
+              />
+
+              {/* Transparent Glass Padlock Overlay */}
+              <div className="absolute inset-0 bg-black/25 group-hover:bg-black/35 backdrop-blur-[1px] transition-all duration-200 flex flex-col items-center justify-center gap-2 p-4">
+                <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-full bg-black/40 backdrop-blur-md border border-white/25 group-hover:border-[#ff5500]/80 group-hover:bg-black/55 group-hover:scale-105 transition-all duration-200 flex items-center justify-center shadow-[0_8px_32px_rgba(0,0,0,0.5)]">
+                  <Lock className="w-6 h-6 sm:w-7 sm:h-7 text-white/90 group-hover:text-[#ff5500] stroke-[2] transition-colors" />
+                </div>
+                <span className="px-3 py-1 rounded-full bg-black/50 backdrop-blur-md border border-white/15 text-white/90 group-hover:text-white group-hover:border-[#ff5500]/50 text-[11px] font-bold uppercase tracking-wider shadow-lg transition-colors">
+                  Aceleração de Resultados • Clique para Acessar
+                </span>
+              </div>
+            </a>
+          </section>
+
           {/* VIEW: CATALOG */}
           {activeTab === 'catalog' && (
             <div className="space-y-8">
@@ -696,6 +762,7 @@ export const MembersArea: React.FC<MembersAreaProps> = ({ currentUser, onLogout 
                         ? activeCategoryFilter.title
                         : selectedPill !== 'all'
                         ? PILL_FILTERS.find(p => p.id === selectedPill)?.label || 'Catálogo Filtrado'
+                        : selectedSessionFilter === 'sec-gta6' ? 'Coleção GTA 6 & Vice City 3D'
                         : selectedSessionFilter === 'sec-chaveiros' ? 'Chaveiros & Keychains 3D'
                         : selectedSessionFilter === 'sec-canecas' ? 'Canecas Térmicas de Time 3D'
                         : selectedSessionFilter === 'sec-canecas-gamer' ? 'Canecas Gamer 3D'

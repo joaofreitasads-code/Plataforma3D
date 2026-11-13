@@ -50,7 +50,7 @@ export interface LucrativeProduct {
   marginPercent: number;
 }
 
-export const TOTAL_CATALOG_MODELS_COUNT = 1355;
+export const TOTAL_CATALOG_MODELS_COUNT = 1441;
 
 export const LUCRATIVE_PRODUCTS: LucrativeProduct[] = [
   {
@@ -95,6 +95,16 @@ export const VIP_DRIVE_MAIN_URL = "https://drive.google.com/drive/folders/1kJEzO
 export const MONSTER_DRIVE_FOLDER_URL = "https://drive.google.com/drive/folders/1csS_HO7mk8XdzW6rJnAeVEBetT0_YSC1?usp=drive_link";
 
 export const SECTIONS: SectionCategory[] = [
+  {
+    id: "sec-gta6",
+    title: "SESSÃO GTA 6 & VICE CITY 3D (FIGURES, DOCKS, LIGHTBOXES & CHAVEIROS)",
+    shortTitle: "GTA 6 3D",
+    iconType: "gamepad",
+    accentColor: "text-pink-400",
+    description: "Coleção completa GTA 6 & Vice City 3D com 86 modelos exclusivos (Lucia, Jason, Macca the Gator, Lightboxes Neon, Docks de Controle PS5/Xbox, Chaveiros e Estação Vice Sunset) com arquivos STL/3MF reais.",
+    count: 86,
+    driveFolderUrl: "https://drive.google.com/drive/folders/1pA4_qQOCfwNHHUhDGyjo_VlojZMBfEuo?usp=sharing",
+  },
   {
     id: "sec-portacopos",
     title: "SESSÃO PORTA COPOS & SUPORTES DE LATA 3D (MONSTER, CERVEJA, GEEK & MOTORES)",
