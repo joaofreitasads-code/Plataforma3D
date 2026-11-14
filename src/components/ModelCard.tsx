@@ -204,21 +204,23 @@ const ModelCardComponent: React.FC<ModelCardProps> = ({
           onOpenDetails(model);
         }
       }}
-      className="group rounded-2xl overflow-hidden cursor-pointer transition-colors duration-150 flex flex-col justify-between text-left bg-[#141720] hover:bg-[#181c27] border border-[#202534] hover:border-[#ff5500]/60 hover:shadow-[0_12px_28px_rgba(0,0,0,0.6)] relative select-none"
+      className="group rounded-2xl overflow-hidden cursor-pointer transition-colors duration-150 flex flex-col justify-between text-left bg-[#141720] hover:bg-[#181c27] border border-[#202534] hover:border-[#ff5500]/60 hover:shadow-[0_12px_28px_rgba(0,0,0,0.6)] relative select-none [content-visibility:auto] [contain-intrinsic-size:1px_330px]"
     >
       {/* Top Image Container with Studio Wooden Table Background */}
       <div className="w-full aspect-square relative overflow-hidden bg-[#0d0f14] group/image select-none">
-        <ResilientImg
-          rawSrc="/model_card_bg.webp"
-          externalFallback="https://i.imgur.com/dxozWx0.png"
-          width={300}
-          height={300}
-          loading="eager"
-          decoding="async"
-          alt=""
-          aria-hidden="true"
-          className="absolute inset-0 w-full h-full object-cover object-center pointer-events-none select-none z-0"
-        />
+        {(isCutoutOrSvg || !hasPhoto) && (
+          <ResilientImg
+            rawSrc="/model_card_bg.webp"
+            externalFallback="https://i.imgur.com/dxozWx0.png"
+            width={300}
+            height={300}
+            loading={priority ? 'eager' : 'lazy'}
+            decoding="async"
+            alt=""
+            aria-hidden="true"
+            className="absolute inset-0 w-full h-full object-cover object-center pointer-events-none select-none z-0"
+          />
+        )}
 
         {hasPhoto ? (
           <img
@@ -227,7 +229,7 @@ const ModelCardComponent: React.FC<ModelCardProps> = ({
             width={300}
             height={300}
             referrerPolicy={isExternalSrc ? 'no-referrer' : undefined}
-            loading="eager"
+            loading={priority ? 'eager' : 'lazy'}
             decoding={priority ? 'sync' : 'async'}
             fetchPriority={priority ? 'high' : 'auto'}
             onError={handleImageError}

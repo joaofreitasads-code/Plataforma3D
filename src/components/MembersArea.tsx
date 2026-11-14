@@ -3,7 +3,7 @@ import {
   Search, Bell, Heart, Menu, X, Box, LogOut,
   Crown, Download, ExternalLink, User, Trophy, Lock, Rocket, ArrowRight
 } from 'lucide-react';
-import { ModelItem, VIP_DRIVE_MAIN_URL, TOTAL_CATALOG_MODELS_COUNT } from '../data/catalogMeta';
+import { ModelItem, VIP_DRIVE_MAIN_URL } from '../data/catalogMeta';
 import { FRONT_DASHBOARD_MODELS } from '../data/frontDashboardModels';
 import { ModelCard } from './ModelCard';
 import { ResilientImg } from './ResilientImg';
@@ -373,10 +373,6 @@ export const MembersArea: React.FC<MembersAreaProps> = ({ currentUser, onLogout 
     setSelectedPill('all');
   }, []);
 
-  const displayTotalCount = isFullCatalogLoaded
-    ? modelsList.length
-    : Math.max(modelsList.length, TOTAL_CATALOG_MODELS_COUNT);
-
   return (
     <div className="min-h-screen bg-[#0a0b0e] text-white flex flex-col font-sans select-none antialiased">
       {/* 1. TOP NAVBAR */}
@@ -582,35 +578,43 @@ export const MembersArea: React.FC<MembersAreaProps> = ({ currentUser, onLogout 
 
         {/* Main Viewport Content */}
         <main className="flex-1 overflow-y-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6 text-left">
-          {/* Top Locked Promotional Banners: Vitrine 3D PRO & Aceleração de Resultados */}
-          <section aria-label="Ferramentas Exclusivas" className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-5">
+          {/* Top Locked Promotional Banners: Vitrine 3D PRO, Aceleração de Resultados & PrintMaster 3D */}
+          <section aria-label="Ferramentas Exclusivas" className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5 items-start">
             <a
               href="https://vitrine3dpro.netlify.app/"
               target="_blank"
               rel="noopener noreferrer"
               aria-label="Acessar Vitrine 3D PRO"
-              className="block relative w-full aspect-video rounded-2xl sm:rounded-3xl overflow-hidden border border-[#222736] hover:border-[#ff5500]/70 bg-[#0d0f15] shadow-2xl transition-all duration-200 group cursor-pointer"
+              className="block rounded-2xl sm:rounded-3xl overflow-hidden border border-[#222736] hover:border-[#ff5500]/70 bg-[#0d0f15] shadow-2xl transition-all duration-200 group cursor-pointer"
             >
-              <ResilientImg
-                rawSrc="/vitrine-3d-pro-banner.webp"
-                externalFallback="https://i.imgur.com/sEYpBeF.png"
-                alt="Vitrine 3D PRO - Gerador de Anúncios com IA"
-                width={1280}
-                height={720}
-                loading="eager"
-                decoding="async"
-                fetchPriority="high"
-                className="w-full h-full object-cover object-center transition-transform duration-300 group-hover:scale-[1.015]"
-              />
+              <div className="relative w-full aspect-video overflow-hidden bg-[#0d0f15]">
+                <ResilientImg
+                  rawSrc="/vitrine-3d-pro-banner.webp"
+                  externalFallback="https://i.imgur.com/sEYpBeF.png"
+                  alt="Vitrine 3D PRO - Gerador de Anúncios com IA"
+                  width={1280}
+                  height={720}
+                  loading="eager"
+                  decoding="async"
+                  fetchPriority="high"
+                  className="w-full h-full object-cover object-center transition-transform duration-300 group-hover:scale-[1.015]"
+                />
 
-              {/* Transparent Glass Padlock Overlay */}
-              <div className="absolute inset-0 bg-black/25 group-hover:bg-black/35 backdrop-blur-[1px] transition-all duration-200 flex flex-col items-center justify-center gap-2 p-4">
-                <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-full bg-black/40 backdrop-blur-md border border-white/25 group-hover:border-[#ff5500]/80 group-hover:bg-black/55 group-hover:scale-105 transition-all duration-200 flex items-center justify-center shadow-[0_8px_32px_rgba(0,0,0,0.5)]">
-                  <Lock className="w-6 h-6 sm:w-7 sm:h-7 text-white/90 group-hover:text-[#ff5500] stroke-[2] transition-colors" />
+                {/* Transparent Glass Padlock Overlay */}
+                <div className="absolute inset-0 bg-black/25 group-hover:bg-black/35 backdrop-blur-[1px] transition-all duration-200 flex flex-col items-center justify-center gap-2 p-4">
+                  <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-full bg-black/40 backdrop-blur-md border border-white/25 group-hover:border-[#ff5500]/80 group-hover:bg-black/55 group-hover:scale-105 transition-all duration-200 flex items-center justify-center shadow-[0_8px_32px_rgba(0,0,0,0.5)]">
+                    <Lock className="w-6 h-6 sm:w-7 sm:h-7 text-white/90 group-hover:text-[#ff5500] stroke-[2] transition-colors" />
+                  </div>
+                  <span className="px-3 py-1 rounded-full bg-black/50 backdrop-blur-md border border-white/15 text-white/90 group-hover:text-white group-hover:border-[#ff5500]/50 text-[11px] font-bold uppercase tracking-wider shadow-lg transition-colors">
+                    Vitrine 3D PRO • Clique para Acessar
+                  </span>
                 </div>
-                <span className="px-3 py-1 rounded-full bg-black/50 backdrop-blur-md border border-white/15 text-white/90 group-hover:text-white group-hover:border-[#ff5500]/50 text-[11px] font-bold uppercase tracking-wider shadow-lg transition-colors">
-                  Vitrine 3D PRO • Clique para Acessar
-                </span>
+              </div>
+
+              <div className="p-3.5 sm:p-4 border-t border-[#1c2130] bg-[#11141c] text-left">
+                <p className="text-xs text-neutral-300 leading-relaxed">
+                  Plataforma para criar títulos, descrições, imagens comerciais e anúncios para Shopee, Mercado Livre e Instagram, a partir das informações dos modelos 3D.
+                </p>
               </div>
             </a>
 
@@ -619,28 +623,74 @@ export const MembersArea: React.FC<MembersAreaProps> = ({ currentUser, onLogout 
               target="_blank"
               rel="noopener noreferrer"
               aria-label="Acessar Dashboard Financeiro - Aceleração de Resultados"
-              className="block relative w-full aspect-video rounded-2xl sm:rounded-3xl overflow-hidden border border-[#222736] hover:border-[#ff5500]/70 bg-[#0d0f15] shadow-2xl transition-all duration-200 group cursor-pointer"
+              className="block rounded-2xl sm:rounded-3xl overflow-hidden border border-[#222736] hover:border-[#ff5500]/70 bg-[#0d0f15] shadow-2xl transition-all duration-200 group cursor-pointer"
             >
-              <ResilientImg
-                rawSrc="/aceleracao-financeira-banner.webp"
-                externalFallback="https://i.imgur.com/DUHRDeh.png"
-                alt="Aceleração de Resultados - Dashboard Financeiro"
-                width={1280}
-                height={720}
-                loading="eager"
-                decoding="async"
-                fetchPriority="high"
-                className="w-full h-full object-cover object-center transition-transform duration-300 group-hover:scale-[1.015]"
-              />
+              <div className="relative w-full aspect-video overflow-hidden bg-[#0d0f15]">
+                <ResilientImg
+                  rawSrc="/aceleracao-financeira-banner.webp"
+                  externalFallback="https://i.imgur.com/DUHRDeh.png"
+                  alt="Aceleração de Resultados - Dashboard Financeiro"
+                  width={1280}
+                  height={720}
+                  loading="eager"
+                  decoding="async"
+                  fetchPriority="high"
+                  className="w-full h-full object-cover object-center transition-transform duration-300 group-hover:scale-[1.015]"
+                />
 
-              {/* Transparent Glass Padlock Overlay */}
-              <div className="absolute inset-0 bg-black/25 group-hover:bg-black/35 backdrop-blur-[1px] transition-all duration-200 flex flex-col items-center justify-center gap-2 p-4">
-                <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-full bg-black/40 backdrop-blur-md border border-white/25 group-hover:border-[#ff5500]/80 group-hover:bg-black/55 group-hover:scale-105 transition-all duration-200 flex items-center justify-center shadow-[0_8px_32px_rgba(0,0,0,0.5)]">
-                  <Lock className="w-6 h-6 sm:w-7 sm:h-7 text-white/90 group-hover:text-[#ff5500] stroke-[2] transition-colors" />
+                {/* Transparent Glass Padlock Overlay */}
+                <div className="absolute inset-0 bg-black/25 group-hover:bg-black/35 backdrop-blur-[1px] transition-all duration-200 flex flex-col items-center justify-center gap-2 p-4">
+                  <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-full bg-black/40 backdrop-blur-md border border-white/25 group-hover:border-[#ff5500]/80 group-hover:bg-black/55 group-hover:scale-105 transition-all duration-200 flex items-center justify-center shadow-[0_8px_32px_rgba(0,0,0,0.5)]">
+                    <Lock className="w-6 h-6 sm:w-7 sm:h-7 text-white/90 group-hover:text-[#ff5500] stroke-[2] transition-colors" />
+                  </div>
+                  <span className="px-3 py-1 rounded-full bg-black/50 backdrop-blur-md border border-white/15 text-white/90 group-hover:text-white group-hover:border-[#ff5500]/50 text-[11px] font-bold uppercase tracking-wider shadow-lg transition-colors">
+                    Aceleração de Resultados • Clique para Acessar
+                  </span>
                 </div>
-                <span className="px-3 py-1 rounded-full bg-black/50 backdrop-blur-md border border-white/15 text-white/90 group-hover:text-white group-hover:border-[#ff5500]/50 text-[11px] font-bold uppercase tracking-wider shadow-lg transition-colors">
-                  Aceleração de Resultados • Clique para Acessar
-                </span>
+              </div>
+
+              <div className="p-3.5 sm:p-4 border-t border-[#1c2130] bg-[#11141c] text-left">
+                <p className="text-xs text-neutral-300 leading-relaxed">
+                  Tenha controle total das suas vendas, lucros e despesas em um só lugar! Conte com IA 24 horas, relatórios inteligentes e ferramentas para tomar decisões mais rápidas, evitar prejuízos e aumentar sua lucratividade.
+                </p>
+              </div>
+            </a>
+
+            <a
+              href="https://master3d.netlify.app/"
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label="Acessar PrintMaster 3D"
+              className="block rounded-2xl sm:rounded-3xl overflow-hidden border border-[#222736] hover:border-[#ff5500]/70 bg-[#0d0f15] shadow-2xl transition-all duration-200 group cursor-pointer md:col-span-2 lg:col-span-1"
+            >
+              <div className="relative w-full aspect-video overflow-hidden bg-[#060908]">
+                <ResilientImg
+                  rawSrc="/printmaster-3d-banner.webp"
+                  externalFallback="https://i.imgur.com/B0Vf3LJ.png"
+                  alt="PrintMaster 3D - Configurador Inteligente"
+                  width={1280}
+                  height={853}
+                  loading="eager"
+                  decoding="async"
+                  fetchPriority="high"
+                  className="w-full h-full object-contain object-center transition-transform duration-300 group-hover:scale-[1.015]"
+                />
+
+                {/* Transparent Glass Padlock Overlay */}
+                <div className="absolute inset-0 bg-black/25 group-hover:bg-black/35 backdrop-blur-[1px] transition-all duration-200 flex flex-col items-center justify-center gap-2 p-4">
+                  <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-full bg-black/40 backdrop-blur-md border border-white/25 group-hover:border-[#ff5500]/80 group-hover:bg-black/55 group-hover:scale-105 transition-all duration-200 flex items-center justify-center shadow-[0_8px_32px_rgba(0,0,0,0.5)]">
+                    <Lock className="w-6 h-6 sm:w-7 sm:h-7 text-white/90 group-hover:text-[#ff5500] stroke-[2] transition-colors" />
+                  </div>
+                  <span className="px-3 py-1 rounded-full bg-black/50 backdrop-blur-md border border-white/15 text-white/90 group-hover:text-white group-hover:border-[#ff5500]/50 text-[11px] font-bold uppercase tracking-wider shadow-lg transition-colors">
+                    PrintMaster 3D • Clique para Acessar
+                  </span>
+                </div>
+              </div>
+
+              <div className="p-3.5 sm:p-4 border-t border-[#1c2130] bg-[#11141c] text-left">
+                <p className="text-xs text-neutral-300 leading-relaxed">
+                  O <strong className="text-white font-bold">PrintMaster 3D</strong> é uma plataforma inteligente que ajuda você a configurar sua impressora 3D com mais facilidade. Consulte temperaturas, filamentos, suportes e perfis de impressão, resolva falhas e evite desperdícios para produzir peças com mais qualidade e precisão!
+                </p>
               </div>
             </a>
           </section>
@@ -763,8 +813,8 @@ export const MembersArea: React.FC<MembersAreaProps> = ({ currentUser, onLogout 
                     {searchQuery
                       ? `RESULTADOS DA BUSCA: ${searchQuery.toUpperCase()}`
                       : (selectedSessionFilter !== 'all' || activeCategoryFilter || selectedPill !== 'all')
-                        ? `COLEÇÃO FILTRADA • ${filteredModels.length} MODELOS`
-                        : `DESTAQUE PRINCIPAL • ${displayTotalCount} MODELOS`}
+                        ? 'COLEÇÃO FILTRADA'
+                        : 'DESTAQUE PRINCIPAL'}
                   </div>
 
                   <div className="flex items-center gap-2.5">
@@ -865,7 +915,7 @@ export const MembersArea: React.FC<MembersAreaProps> = ({ currentUser, onLogout 
                       <ModelCard
                         key={model.id}
                         model={model}
-                        priority={index < 20}
+                        priority={index < 8}
                         isFavorite={favoriteSet.has(model.id)}
                         onToggleFavorite={handleToggleFavorite}
                         onOpenDetails={handleOpenModel}
@@ -1213,9 +1263,9 @@ export const MembersArea: React.FC<MembersAreaProps> = ({ currentUser, onLogout 
                       rawSrc="/acelerador-calculadora-precificacao.webp"
                       externalFallback="https://i.imgur.com/6MmRnCj.png"
                       alt="Calculadora - Pare de Vender Sem Lucro"
-                      width={800}
-                      height={800}
-                      loading="eager"
+                      width={640}
+                      height={640}
+                      loading="lazy"
                       decoding="async"
                       className="w-full h-full object-cover object-center group-hover:scale-[1.03] transition-transform duration-300"
                     />
@@ -1277,9 +1327,9 @@ export const MembersArea: React.FC<MembersAreaProps> = ({ currentUser, onLogout 
                       rawSrc="/acelerador-pacote-completo.webp"
                       externalFallback="https://i.imgur.com/ELGKt81.png"
                       alt="Leve Todos os Produtos Acima - 60% OFF"
-                      width={800}
-                      height={800}
-                      loading="eager"
+                      width={640}
+                      height={640}
+                      loading="lazy"
                       decoding="async"
                       className="w-full h-full object-cover object-center group-hover:scale-[1.03] transition-transform duration-300"
                     />
