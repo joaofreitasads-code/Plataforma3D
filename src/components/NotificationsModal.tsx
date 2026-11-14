@@ -1,16 +1,26 @@
 import React from 'react';
-import { X } from 'lucide-react';
+import { X, Rocket, ArrowRight } from 'lucide-react';
 import { VIP_DRIVE_MAIN_URL } from '../data/catalogMeta';
 
 interface NotificationsModalProps {
   isOpen: boolean;
   onClose: () => void;
+  onOpenAccelerators?: () => void;
 }
 
-export const NotificationsModal: React.FC<NotificationsModalProps> = ({ isOpen, onClose }) => {
+export const NotificationsModal: React.FC<NotificationsModalProps> = ({ isOpen, onClose, onOpenAccelerators }) => {
   if (!isOpen) return null;
 
   const NOTICES = [
+    {
+      id: -2,
+      tag: "ACELERADORES DE RESULTADOS",
+      title: "Conheça os Aceleradores para Vender Mais e Lucrar Antes",
+      desc: "Guias práticos para evitar erros na impressão 3D, lista com os 15 nichos mais lucrativos, calculadora de lucro, atualizações vitalícias e pacote completo com 60% OFF.",
+      time: "Agora",
+      isNew: true,
+      isAccelerators: true
+    },
     {
       id: -1,
       tag: "POKÉMON 3D",
@@ -87,6 +97,20 @@ export const NotificationsModal: React.FC<NotificationsModalProps> = ({ isOpen, 
               </div>
               <h4 className="text-xs font-black text-white mb-1 uppercase">{n.title}</h4>
               <p className="text-[11px] text-neutral-300 leading-relaxed font-medium">{n.desc}</p>
+              {n.isAccelerators && onOpenAccelerators && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    onOpenAccelerators();
+                    onClose();
+                  }}
+                  className="mt-3 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#ff5500] hover:bg-[#ff661a] text-white text-[11px] font-black uppercase tracking-wider transition cursor-pointer shadow-md shadow-[#ff5500]/25"
+                >
+                  <Rocket className="w-3.5 h-3.5 stroke-[2.5]" />
+                  <span>Conhecer Aceleradores</span>
+                  <ArrowRight className="w-3.5 h-3.5 stroke-[2.5]" />
+                </button>
+              )}
             </div>
           ))}
         </div>

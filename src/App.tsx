@@ -8,22 +8,10 @@ function getInitialUser(): MemberUser | null {
   try {
     const saved = sessionStorage.getItem(STORAGE_USER_KEY) || localStorage.getItem(STORAGE_USER_KEY);
     if (saved) return JSON.parse(saved);
-    const defaultVipUser: MemberUser = {
-      name: 'João Vitor',
-      email: 'joao.freitas.ads@gmail.com',
-      loginDate: new Date().toISOString(),
-      vipStatus: true,
-    };
-    sessionStorage.setItem(STORAGE_USER_KEY, JSON.stringify(defaultVipUser));
-    return defaultVipUser;
   } catch {
-    return {
-      name: 'João Vitor',
-      email: 'joao.freitas.ads@gmail.com',
-      loginDate: new Date().toISOString(),
-      vipStatus: true,
-    };
+    // ignore storage errors
   }
+  return null;
 }
 
 export default function App() {

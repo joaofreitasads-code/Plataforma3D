@@ -1,10 +1,10 @@
 import React from 'react';
 import { 
-  Home, Folder, Sliders, Flame, Star, Download, Clock, TrendingUp, Settings, Box
+  Home, Folder, Rocket, Flame, Star, Download, Clock, TrendingUp, Settings, Box
 } from 'lucide-react';
 import { MemberUser } from '../types/auth';
 
-export type TabKey = 'catalog' | 'all-files' | 'favorites' | 'downloads' | 'calculator' | 'video-aula' | 'bonus' | 'recentes' | 'settings';
+export type TabKey = 'catalog' | 'all-files' | 'aceleradores' | 'favorites' | 'downloads' | 'calculator' | 'video-aula' | 'bonus' | 'recentes' | 'settings';
 
 interface SidebarProps {
   activeTab: TabKey;
@@ -106,21 +106,23 @@ export const Sidebar: React.FC<SidebarProps> = ({
           </span>
         </button>
 
-        {/* 3. Fichas de Co... (with 'ACESSO VIP' green badge) */}
+        {/* 3. Aceleradores de Resultados */}
         <button
           type="button"
           onClick={() => {
-            window.open('https://checkout.wiven.com.br/checkout/cmupyvej300i601pll6oi9cj1?offer=BX0N8TV', '_blank', 'noopener,noreferrer');
+            onSelectTab('aceleradores');
           }}
-          className="w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-sm font-medium text-neutral-300 hover:text-white hover:bg-[#141720] transition-colors text-left cursor-pointer"
+          title="Aceleradores de Resultados"
+          className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-sm font-medium transition-colors text-left cursor-pointer ${
+            activeTab === 'aceleradores'
+              ? 'text-white bg-[#161922] font-bold'
+              : 'text-neutral-300 hover:text-white hover:bg-[#141720]'
+          }`}
         >
           <div className="flex items-center gap-3 min-w-0">
-            <Sliders className="w-4 h-4 text-neutral-400 stroke-[2] shrink-0" />
-            <span className="truncate">Fichas de Co...</span>
+            <Rocket className={`w-4 h-4 stroke-[2] shrink-0 ${activeTab === 'aceleradores' ? 'text-[#ff5500]' : 'text-neutral-400'}`} />
+            <span className="text-[13px] leading-tight">Aceleradores de Resultados</span>
           </div>
-          <span className="text-[9px] font-black px-2 py-0.5 rounded-md bg-[#003822] text-[#00e575] border border-[#005a38] uppercase tracking-wider shrink-0">
-            ACESSO VIP
-          </span>
         </button>
 
         {/* 4. Mais Vendidos (with 'NOVO' red badge) */}
