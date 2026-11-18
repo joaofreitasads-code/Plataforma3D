@@ -1,10 +1,10 @@
 import React from 'react';
 import { 
-  Home, Folder, Rocket, Flame, Star, Download, Clock, TrendingUp, Settings, Box
+  Home, Folder, Rocket, Layers, Flame, Star, Download, Clock, TrendingUp, Settings, Box
 } from 'lucide-react';
 import { MemberUser } from '../types/auth';
 
-export type TabKey = 'catalog' | 'all-files' | 'aceleradores' | 'favorites' | 'downloads' | 'calculator' | 'video-aula' | 'bonus' | 'recentes' | 'settings';
+export type TabKey = 'catalog' | 'all-files' | 'aceleradores' | 'plataformas' | 'favorites' | 'downloads' | 'calculator' | 'video-aula' | 'bonus' | 'recentes' | 'settings';
 
 interface SidebarProps {
   activeTab: TabKey;
@@ -122,6 +122,25 @@ export const Sidebar: React.FC<SidebarProps> = ({
           <div className="flex items-center gap-3 min-w-0">
             <Rocket className={`w-4 h-4 stroke-[2] shrink-0 ${activeTab === 'aceleradores' ? 'text-[#ff5500]' : 'text-neutral-400'}`} />
             <span className="text-[13px] leading-tight">Aceleradores de Resultados</span>
+          </div>
+        </button>
+
+        {/* 4. Plataformas Exclusivas */}
+        <button
+          type="button"
+          onClick={() => {
+            onSelectTab('plataformas');
+          }}
+          title="Plataformas Exclusivas"
+          className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-sm font-medium transition-colors text-left cursor-pointer ${
+            activeTab === 'plataformas'
+              ? 'text-white bg-[#161922] font-bold'
+              : 'text-neutral-300 hover:text-white hover:bg-[#141720]'
+          }`}
+        >
+          <div className="flex items-center gap-3 min-w-0">
+            <Layers className={`w-4 h-4 stroke-[2] shrink-0 ${activeTab === 'plataformas' ? 'text-[#ff5500]' : 'text-neutral-400'}`} />
+            <span className="text-[13px] leading-tight">Plataformas Exclusivas</span>
           </div>
         </button>
 
