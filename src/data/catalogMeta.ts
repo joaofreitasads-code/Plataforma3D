@@ -50,7 +50,7 @@ export interface LucrativeProduct {
   marginPercent: number;
 }
 
-export const TOTAL_CATALOG_MODELS_COUNT = 1444;
+export const TOTAL_CATALOG_MODELS_COUNT = 1449;
 
 export const LUCRATIVE_PRODUCTS: LucrativeProduct[] = [
   {
