@@ -154,40 +154,6 @@ async function startServer() {
     res.status(200).send(result.buf);
   });
 
-  const catalogExtraPath = path.join(
-    IS_DEV || !fs.existsSync(path.join(DIST_DIR, 'catalog-extra.json'))
-      ? path.join(ROOT_DIR, 'public', 'catalog-extra.json')
-      : path.join(DIST_DIR, 'catalog-extra.json')
-  );
-  let catalogExtraGzipped: Buffer | null = null;
-  let catalogExtraRaw: Buffer | null = null;
-  try {
-    if (fs.existsSync(catalogExtraPath)) {
-      catalogExtraRaw = fs.readFileSync(catalogExtraPath);
-      catalogExtraGzipped = zlib.gzipSync(catalogExtraRaw, { level: 6 });
-    }
-  } catch {
-    catalogExtraGzipped = null;
-    catalogExtraRaw = null;
-  }
-
-  // Fast gzipped delivery for catalog-extra.json (~195KB over the wire vs 1.5MB uncompressed)
-  app.get('/catalog-extra.json', (req, res, next) => {
-    if (!catalogExtraRaw) return next();
-    const acceptEncoding = String(req.headers['accept-encoding'] || '');
-    res.setHeader('Content-Type', 'application/json; charset=utf-8');
-    res.setHeader('Cache-Control', 'public, max-age=3600');
-    res.setHeader('Vary', 'Accept-Encoding');
-    if (catalogExtraGzipped && acceptEncoding.includes('gzip')) {
-      res.setHeader('Content-Encoding', 'gzip');
-      res.setHeader('Content-Length', String(catalogExtraGzipped.length));
-      res.status(200).send(catalogExtraGzipped);
-      return;
-    }
-    res.setHeader('Content-Length', String(catalogExtraRaw.length));
-    res.status(200).send(catalogExtraRaw);
-  });
-
   const hasBuiltDist = fs.existsSync(path.join(DIST_DIR, 'index.html'));
 
   if (IS_DEV || !hasBuiltDist) {
@@ -199,6 +165,32 @@ async function startServer() {
     });
     app.use(vite.middlewares);
   } else {
+    const gzipAssetCache = new Map<string, Buffer>();
+    app.get('/assets/*', (req, res, next) => {
+      const acceptEncoding = String(req.headers['accept-encoding'] || '');
+      if (!acceptEncoding.includes('gzip') || !/\.(js|css)$/.test(req.path)) {
+        return next();
+      }
+      const safeRel = path.normalize(req.path).replace(/^(\.\.(\/|\\|$))+/, '');
+      const fullPath = path.join(DIST_DIR, safeRel);
+      if (!fullPath.startsWith(path.join(DIST_DIR, 'assets')) || !fs.existsSync(fullPath)) {
+        return next();
+      }
+      let gz = gzipAssetCache.get(fullPath);
+      if (!gz) {
+        gz = zlib.gzipSync(fs.readFileSync(fullPath), { level: 6 });
+        if (gzipAssetCache.size < 64) {
+          gzipAssetCache.set(fullPath, gz);
+        }
+      }
+      res.setHeader('Content-Type', fullPath.endsWith('.css') ? 'text/css; charset=utf-8' : 'application/javascript; charset=utf-8');
+      res.setHeader('Content-Encoding', 'gzip');
+      res.setHeader('Vary', 'Accept-Encoding');
+      res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
+      res.setHeader('Content-Length', String(gz.length));
+      res.status(200).send(gz);
+    });
+
     app.use(
       '/assets',
       express.static(path.join(DIST_DIR, 'assets'), {
@@ -215,8 +207,6 @@ async function startServer() {
             res.setHeader('Cache-Control', 'no-cache');
           } else if (filePath.endsWith('.webp') || filePath.endsWith('.svg')) {
             res.setHeader('Cache-Control', 'public, max-age=604800');
-          } else if (filePath.endsWith('catalog-extra.json')) {
-            res.setHeader('Cache-Control', 'public, max-age=3600');
           }
         },
       })

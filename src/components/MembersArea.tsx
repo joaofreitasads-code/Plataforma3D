@@ -39,28 +39,17 @@ const PILL_FILTERS = [
   { id: 'carros', label: 'Carros & Veículos' },
 ];
 
-// Progressive background loader for the full 1,355-model catalog via fast static JSON (205KB gzipped, off-main-thread JSON parse)
+// Progressive background loader for the full catalog via lazy code-split chunk
 let cachedFullModels: ModelItem[] | null = null;
 let fullModelsPromise: Promise<ModelItem[]> | null = null;
 
 function loadFullCatalog(): Promise<ModelItem[]> {
   if (cachedFullModels) return Promise.resolve(cachedFullModels);
   if (!fullModelsPromise) {
-    fullModelsPromise = fetch('/catalog-extra.json')
-      .then((res) => {
-        if (!res.ok) throw new Error('HTTP ' + res.status);
-        return res.json() as Promise<ModelItem[]>;
-      })
-      .then((extra) => {
-        cachedFullModels = [...FRONT_DASHBOARD_MODELS, ...extra];
-        return cachedFullModels;
-      })
-      .catch(() =>
-        import('../data/modelsData').then((mod) => {
-          cachedFullModels = mod.ALL_MODELS;
-          return mod.ALL_MODELS;
-        })
-      );
+    fullModelsPromise = import('../data/modelsData').then((mod) => {
+      cachedFullModels = mod.ALL_MODELS;
+      return mod.ALL_MODELS;
+    });
   }
   return fullModelsPromise;
 }
