@@ -165,30 +165,74 @@ async function startServer() {
     });
     app.use(vite.middlewares);
   } else {
-    const gzipAssetCache = new Map<string, Buffer>();
-    app.get('/assets/*', (req, res, next) => {
+    const compressedCache = new Map<string, Buffer>();
+    const compressBuffer = (raw: Buffer, encoding: 'br' | 'gzip'): Promise<Buffer> =>
+      new Promise((resolve, reject) => {
+        if (encoding === 'br') {
+          zlib.brotliCompress(
+            raw,
+            { params: { [zlib.constants.BROTLI_PARAM_QUALITY]: 5 } },
+            (err, out) => (err ? reject(err) : resolve(out))
+          );
+        } else {
+          zlib.gzip(raw, { level: 6 }, (err, out) => (err ? reject(err) : resolve(out)));
+        }
+      });
+
+    const serveCompressedFile = async (
+      fullPath: string,
+      contentType: string,
+      cacheControl: string,
+      req: express.Request,
+      res: express.Response
+    ): Promise<boolean> => {
       const acceptEncoding = String(req.headers['accept-encoding'] || '');
-      if (!acceptEncoding.includes('gzip') || !/\.(js|css)$/.test(req.path)) {
-        return next();
+      const encoding: 'br' | 'gzip' | null = acceptEncoding.includes('br')
+        ? 'br'
+        : acceptEncoding.includes('gzip')
+        ? 'gzip'
+        : null;
+      if (!encoding) return false;
+      const cacheKey = `${encoding}:${fullPath}`;
+      let payload = compressedCache.get(cacheKey);
+      if (!payload) {
+        const raw = await fs.promises.readFile(fullPath);
+        payload = await compressBuffer(raw, encoding);
+        if (compressedCache.size < 128) {
+          compressedCache.set(cacheKey, payload);
+        }
       }
+      res.setHeader('Content-Type', contentType);
+      res.setHeader('Content-Encoding', encoding);
+      res.setHeader('Vary', 'Accept-Encoding');
+      res.setHeader('Cache-Control', cacheControl);
+      res.setHeader('Content-Length', String(payload.length));
+      res.status(200).send(payload);
+      return true;
+    };
+
+    app.get('/assets/*', async (req, res, next) => {
+      if (!/\.(js|css)$/.test(req.path)) return next();
       const safeRel = path.normalize(req.path).replace(/^(\.\.(\/|\\|$))+/, '');
       const fullPath = path.join(DIST_DIR, safeRel);
       if (!fullPath.startsWith(path.join(DIST_DIR, 'assets')) || !fs.existsSync(fullPath)) {
         return next();
       }
-      let gz = gzipAssetCache.get(fullPath);
-      if (!gz) {
-        gz = zlib.gzipSync(fs.readFileSync(fullPath), { level: 6 });
-        if (gzipAssetCache.size < 64) {
-          gzipAssetCache.set(fullPath, gz);
-        }
+      try {
+        const contentType = fullPath.endsWith('.css')
+          ? 'text/css; charset=utf-8'
+          : 'application/javascript; charset=utf-8';
+        const served = await serveCompressedFile(
+          fullPath,
+          contentType,
+          'public, max-age=31536000, immutable',
+          req,
+          res
+        );
+        if (!served) next();
+      } catch {
+        next();
       }
-      res.setHeader('Content-Type', fullPath.endsWith('.css') ? 'text/css; charset=utf-8' : 'application/javascript; charset=utf-8');
-      res.setHeader('Content-Encoding', 'gzip');
-      res.setHeader('Vary', 'Accept-Encoding');
-      res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
-      res.setHeader('Content-Length', String(gz.length));
-      res.status(200).send(gz);
     });
 
     app.use(
@@ -202,19 +246,33 @@ async function startServer() {
     app.use(
       express.static(DIST_DIR, {
         maxAge: '7d',
+        index: false,
         setHeaders(res, filePath) {
           if (filePath.endsWith('index.html')) {
             res.setHeader('Cache-Control', 'no-cache');
           } else if (filePath.endsWith('.webp') || filePath.endsWith('.svg')) {
-            res.setHeader('Cache-Control', 'public, max-age=604800');
+            res.setHeader('Cache-Control', 'public, max-age=604800, immutable');
           }
         },
       })
     );
 
-    app.get('*', (_req, res) => {
+    app.get('*', async (req, res) => {
+      const indexPath = path.join(DIST_DIR, 'index.html');
+      try {
+        const served = await serveCompressedFile(
+          indexPath,
+          'text/html; charset=utf-8',
+          'no-cache',
+          req,
+          res
+        );
+        if (served) return;
+      } catch {
+        // fall through to sendFile
+      }
       res.setHeader('Cache-Control', 'no-cache');
-      res.sendFile(path.join(DIST_DIR, 'index.html'));
+      res.sendFile(indexPath);
     });
   }
 

@@ -116,6 +116,8 @@ const blobUrlCache = new Map<string, string>();
 const failedBlobUrls = new Set<string>();
 const inFlightBlobFetches = new Map<string, Promise<string | null>>();
 let preferSameOriginBlob = false;
+let consecutiveBlobFetchFailures = 0;
+let skipSameOriginBlobFetch = false;
 
 export function shouldPreferBlobFetch(): boolean {
   return preferSameOriginBlob;
@@ -165,6 +167,7 @@ async function isValidImageBlob(blob: Blob, contentTypeHeader: string, url: stri
 
 export function fetchSameOriginImageAsBlobUrl(url: string): Promise<string | null> {
   if (!url || !url.startsWith('/')) return Promise.resolve(null);
+  if (skipSameOriginBlobFetch) return Promise.resolve(null);
 
   const cached = getCachedBlobUrl(url);
   if (cached) return Promise.resolve(cached);
@@ -179,6 +182,9 @@ export function fetchSameOriginImageAsBlobUrl(url: string): Promise<string | nul
       if (!response.ok) {
         if (response.status === 404 || response.status === 400) {
           failedBlobUrls.add(url);
+        } else {
+          consecutiveBlobFetchFailures += 1;
+          if (consecutiveBlobFetchFailures >= 2) skipSameOriginBlobFetch = true;
         }
         return null;
       }
@@ -186,9 +192,12 @@ export function fetchSameOriginImageAsBlobUrl(url: string): Promise<string | nul
       const blob = await response.blob();
       const valid = await isValidImageBlob(blob, contentType, url);
       if (!valid) {
+        consecutiveBlobFetchFailures += 1;
+        if (consecutiveBlobFetchFailures >= 2) skipSameOriginBlobFetch = true;
         return null;
       }
 
+      consecutiveBlobFetchFailures = 0;
       const objectUrl = URL.createObjectURL(blob);
       if (blobUrlCache.size >= MAX_BLOB_CACHE) {
         const oldestKey = blobUrlCache.keys().next().value;
@@ -201,6 +210,8 @@ export function fetchSameOriginImageAsBlobUrl(url: string): Promise<string | nul
       blobUrlCache.set(url, objectUrl);
       return objectUrl;
     } catch {
+      consecutiveBlobFetchFailures += 1;
+      if (consecutiveBlobFetchFailures >= 2) skipSameOriginBlobFetch = true;
       return null;
     } finally {
       inFlightBlobFetches.delete(url);

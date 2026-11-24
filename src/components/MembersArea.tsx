@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect, useRef, useDeferredValue, useCallback, lazy, Suspense } from 'react';
+import React, { useState, useMemo, useEffect, useRef, useDeferredValue, useCallback, startTransition, lazy, Suspense } from 'react';
 import {
   Search, Bell, Heart, Menu, X, Box, LogOut,
   Crown, Download, ExternalLink, User, Trophy, Lock, Rocket, ArrowRight, Layers
@@ -19,6 +19,7 @@ const BonusSectionsGrid = lazy(() => import('./BonusSectionsGrid').then(m => ({ 
 const CategoriesTab = lazy(() => import('./CategoriesTab').then(m => ({ default: m.CategoriesTab })));
 const ProfitCalculator = lazy(() => import('./ProfitCalculator').then(m => ({ default: m.ProfitCalculator })));
 const SettingsTab = lazy(() => import('./SettingsTab').then(m => ({ default: m.SettingsTab })));
+const StepByStepGuideTab = lazy(() => import('./StepByStepGuideTab').then(m => ({ default: m.StepByStepGuideTab })));
 
 interface MembersAreaProps {
   currentUser: MemberUser;
@@ -124,18 +125,23 @@ export const MembersArea: React.FC<MembersAreaProps> = ({ currentUser, onLogout 
       .catch(() => {});
   }, [isFullCatalogLoaded]);
 
-  // Hydrate full catalog in background only AFTER page finishes initial load/paint
+  // Hydrate full catalog & preload detail modal in background only AFTER initial paint and user settles
   useEffect(() => {
-    if (isFullCatalogLoaded) return;
     let idleId: number | null = null;
-    const scheduleFetch = () => {
-      if (typeof window !== 'undefined' && 'requestIdleCallback' in window) {
-        idleId = (window as unknown as { requestIdleCallback: (cb: () => void, opts?: { timeout: number }) => number }).requestIdleCallback(ensureFullCatalog, { timeout: 2500 });
-      } else {
+    const runIdleWarmup = () => {
+      import('./ModelDetailModal').catch(() => {});
+      if (!isFullCatalogLoaded) {
         ensureFullCatalog();
       }
     };
-    const timer = globalThis.setTimeout(scheduleFetch, 900);
+    const scheduleFetch = () => {
+      if (typeof window !== 'undefined' && 'requestIdleCallback' in window) {
+        idleId = (window as unknown as { requestIdleCallback: (cb: () => void, opts?: { timeout: number }) => number }).requestIdleCallback(runIdleWarmup, { timeout: 5000 });
+      } else {
+        runIdleWarmup();
+      }
+    };
+    const timer = globalThis.setTimeout(scheduleFetch, 3000);
     return () => {
       globalThis.clearTimeout(timer);
       if (idleId !== null && typeof window !== 'undefined' && 'cancelIdleCallback' in window) {
@@ -328,10 +334,12 @@ export const MembersArea: React.FC<MembersAreaProps> = ({ currentUser, onLogout 
       (entries) => {
         if (entries[0].isIntersecting) {
           ensureFullCatalog();
-          setVisibleCount(prev => (prev < filteredModels.length ? prev + 25 : prev));
+          startTransition(() => {
+            setVisibleCount(prev => (prev < filteredModels.length ? prev + 25 : prev));
+          });
         }
       },
-      { rootMargin: '250px' }
+      { rootMargin: '500px' }
     );
     observer.observe(cur);
     return () => observer.disconnect();
@@ -356,10 +364,42 @@ export const MembersArea: React.FC<MembersAreaProps> = ({ currentUser, onLogout 
   }, []);
 
   const clearAllFilters = useCallback(() => {
-    setSearchQuery('');
-    setSelectedSessionFilter('all');
-    setActiveCategoryFilter(null);
-    setSelectedPill('all');
+    startTransition(() => {
+      setSearchQuery('');
+      setSelectedSessionFilter('all');
+      setActiveCategoryFilter(null);
+      setSelectedPill('all');
+    });
+  }, []);
+
+  const handleDesktopSelectTab = useCallback((tab: TabKey) => {
+    if (tab === 'favorites') ensureFullCatalog();
+    startTransition(() => {
+      setActiveTab(tab);
+      if (tab === 'catalog') {
+        setSelectedSessionFilter('all');
+        setSelectedPill('all');
+        setActiveCategoryFilter(null);
+      }
+    });
+  }, [ensureFullCatalog]);
+
+  const handleDesktopSelectCategoryFilter = useCallback((catId: string) => {
+    if (catId !== 'all') ensureFullCatalog();
+    startTransition(() => {
+      setSelectedSessionFilter(catId);
+      setSelectedPill('all');
+      setActiveCategoryFilter(null);
+      setActiveTab('catalog');
+    });
+  }, [ensureFullCatalog]);
+
+  const handleOpenSettings = useCallback(() => {
+    startTransition(() => setActiveTab('settings'));
+  }, []);
+
+  const handleOpenCalculator = useCallback(() => {
+    startTransition(() => setActiveTab('calculator'));
   }, []);
 
   return (
@@ -499,29 +539,15 @@ export const MembersArea: React.FC<MembersAreaProps> = ({ currentUser, onLogout 
         <div className="hidden md:block">
           <Sidebar
             activeTab={activeTab}
-            onSelectTab={(tab) => {
-              if (tab === 'favorites') ensureFullCatalog();
-              setActiveTab(tab);
-              if (tab === 'catalog') {
-                setSelectedSessionFilter('all');
-                setSelectedPill('all');
-                setActiveCategoryFilter(null);
-              }
-            }}
+            onSelectTab={handleDesktopSelectTab}
             selectedCategoryFilter={selectedSessionFilter}
-            onSelectCategoryFilter={(catId) => {
-              if (catId !== 'all') ensureFullCatalog();
-              setSelectedSessionFilter(catId);
-              setSelectedPill('all');
-              setActiveCategoryFilter(null);
-              setActiveTab('catalog');
-            }}
+            onSelectCategoryFilter={handleDesktopSelectCategoryFilter}
             favoritesCount={favorites.length}
             downloadsCount={downloads.length}
             currentUser={currentUser}
             onLogout={onLogout}
-            onOpenSettings={() => setActiveTab('settings')}
-            onOpenCalculator={() => setActiveTab('calculator')}
+            onOpenSettings={handleOpenSettings}
+            onOpenCalculator={handleOpenCalculator}
           />
         </div>
 
@@ -778,7 +804,7 @@ export const MembersArea: React.FC<MembersAreaProps> = ({ currentUser, onLogout 
                       <ModelCard
                         key={model.id}
                         model={model}
-                        priority={index < 8}
+                        priority={index < 5}
                         isFavorite={favoriteSet.has(model.id)}
                         onToggleFavorite={handleToggleFavorite}
                         onOpenDetails={handleOpenModel}
@@ -1522,6 +1548,13 @@ export const MembersArea: React.FC<MembersAreaProps> = ({ currentUser, onLogout 
                   onBrowseCatalog={() => setActiveTab('catalog')}
                 />
               </div>
+            </Suspense>
+          )}
+
+          {/* VIEW: EXPLICAÇÕES PASSO A PASSO */}
+          {activeTab === 'explicacoes' && (
+            <Suspense fallback={TabLoadingFallback}>
+              <StepByStepGuideTab onBackToCatalog={() => setActiveTab('catalog')} />
             </Suspense>
           )}
 

@@ -50,7 +50,7 @@ export interface LucrativeProduct {
   marginPercent: number;
 }
 
-export const TOTAL_CATALOG_MODELS_COUNT = 1471;
+export const TOTAL_CATALOG_MODELS_COUNT = 1506;
 
 export const LUCRATIVE_PRODUCTS: LucrativeProduct[] = [
   {
@@ -322,7 +322,7 @@ export const SECTIONS: SectionCategory[] = [
     iconType: "zap",
     accentColor: "text-neutral-400",
     description: "38 modelos clássicos da 1ª geração com fotos reais e arquivos STL completos: Ivysaur Pokébola, Charizard, Blastoise, Gengar, Gyarados, Abra, Haunter, Eeveelutions, Onix e muito mais.",
-    count: 50,
+    count: 71,
     driveFolderUrl: "https://drive.google.com/drive/folders/11w8N3fu5M4Vg3Avy8nvKn8dybPaqA9Uf?usp=sharing",
   },
   {
@@ -402,7 +402,7 @@ export const SECTIONS: SectionCategory[] = [
     iconType: "sparkles",
     accentColor: "text-neutral-400",
     description: "25 modelos Funko Pop clássicos com fotos reais: Goku, Chaves, Hulk, Homem de Ferro, Batman, Toy Story e mais.",
-    count: 25,
+    count: 39,
     driveFolderUrl: "https://drive.google.com/drive/folders/175F3xYnU59y-0G9N6v5M8P-39714qV5N",
   }
 ];

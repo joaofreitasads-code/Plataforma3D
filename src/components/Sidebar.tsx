@@ -1,10 +1,10 @@
 import React from 'react';
 import { 
-  Home, Folder, Rocket, Layers, Flame, Star, Download, Clock, TrendingUp, Settings, Box
+  Home, Folder, Rocket, Layers, Flame, Star, Download, BookOpen, Clock, TrendingUp, Settings, Box
 } from 'lucide-react';
 import { MemberUser } from '../types/auth';
 
-export type TabKey = 'catalog' | 'all-files' | 'aceleradores' | 'plataformas' | 'favorites' | 'downloads' | 'calculator' | 'video-aula' | 'bonus' | 'recentes' | 'settings';
+export type TabKey = 'catalog' | 'all-files' | 'aceleradores' | 'plataformas' | 'favorites' | 'downloads' | 'explicacoes' | 'calculator' | 'video-aula' | 'bonus' | 'recentes' | 'settings';
 
 interface SidebarProps {
   activeTab: TabKey;
@@ -19,7 +19,7 @@ interface SidebarProps {
   onOpenCalculator?: () => void;
 }
 
-export const Sidebar: React.FC<SidebarProps> = ({
+const SidebarComponent: React.FC<SidebarProps> = ({
   activeTab,
   onSelectTab,
   selectedCategoryFilter,
@@ -204,7 +204,24 @@ export const Sidebar: React.FC<SidebarProps> = ({
           )}
         </button>
 
-        {/* 7. Recentes */}
+        {/* 7. Explicações Passo a Passo */}
+        <button
+          type="button"
+          onClick={() => onSelectTab('explicacoes')}
+          title="Explicações Passo a Passo"
+          className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-sm font-medium transition-colors text-left cursor-pointer ${
+            activeTab === 'explicacoes'
+              ? 'text-white bg-[#161922] font-bold'
+              : 'text-neutral-300 hover:text-white hover:bg-[#141720]'
+          }`}
+        >
+          <div className="flex items-center gap-3 min-w-0">
+            <BookOpen className={`w-4 h-4 stroke-[2] shrink-0 ${activeTab === 'explicacoes' ? 'text-[#ff5500]' : 'text-neutral-400'}`} />
+            <span className="text-[13px] leading-tight">Explicações Passo a Passo</span>
+          </div>
+        </button>
+
+        {/* 8. Recentes */}
         <button
           type="button"
           onClick={() => {
@@ -275,4 +292,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
     </aside>
   );
 };
+
+export const Sidebar = React.memo(SidebarComponent);
 

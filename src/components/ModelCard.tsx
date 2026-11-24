@@ -204,7 +204,7 @@ const ModelCardComponent: React.FC<ModelCardProps> = ({
           onOpenDetails(model);
         }
       }}
-      className="group rounded-2xl overflow-hidden cursor-pointer transition-colors duration-150 flex flex-col justify-between text-left bg-[#141720] hover:bg-[#181c27] border border-[#202534] hover:border-[#ff5500]/60 hover:shadow-[0_12px_28px_rgba(0,0,0,0.6)] relative select-none [content-visibility:auto] [contain-intrinsic-size:1px_330px]"
+      className="group rounded-2xl overflow-hidden cursor-pointer transition-colors duration-150 flex flex-col justify-between text-left bg-[#141720] hover:bg-[#181c27] border border-[#202534] hover:border-[#ff5500]/60 hover:shadow-[0_12px_28px_rgba(0,0,0,0.6)] relative select-none [content-visibility:auto] [contain-intrinsic-size:1px_330px] [contain:layout_style]"
     >
       {/* Top Image Container with Studio Wooden Table Background */}
       <div className="w-full aspect-square relative overflow-hidden bg-[#0d0f14] group/image select-none">
@@ -230,7 +230,7 @@ const ModelCardComponent: React.FC<ModelCardProps> = ({
             height={300}
             referrerPolicy={isExternalSrc ? 'no-referrer' : undefined}
             loading={priority ? 'eager' : 'lazy'}
-            decoding={priority ? 'sync' : 'async'}
+            decoding="async"
             fetchPriority={priority ? 'high' : 'auto'}
             onError={handleImageError}
             className={

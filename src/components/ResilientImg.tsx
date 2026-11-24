@@ -16,13 +16,14 @@ interface ResilientImgProps extends React.ImgHTMLAttributes<HTMLImageElement> {
   onFinalError?: () => void;
 }
 
-export const ResilientImg: React.FC<ResilientImgProps> = ({
+const ResilientImgComponent: React.FC<ResilientImgProps> = ({
   rawSrc,
   targetWidth = 240,
   externalFallback,
   onFinalError,
   onError,
   referrerPolicy,
+  decoding = 'async',
   ...rest
 }) => {
   const [attempt, setAttempt] = useState(0);
@@ -125,8 +126,11 @@ export const ResilientImg: React.FC<ResilientImgProps> = ({
     <img
       {...rest}
       src={displaySrc}
+      decoding={decoding}
       referrerPolicy={referrerPolicy ?? (displaySrc.startsWith('http') ? 'no-referrer' : undefined)}
       onError={handleError}
     />
   );
 };
+
+export const ResilientImg = React.memo(ResilientImgComponent);
