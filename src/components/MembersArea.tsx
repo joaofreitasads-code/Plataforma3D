@@ -717,8 +717,8 @@ export const MembersArea: React.FC<MembersAreaProps> = ({ currentUser, onLogout 
                   </p>
                 </div>
 
-                <div className="flex items-center gap-2">
-                  {(searchQuery || selectedSessionFilter !== 'all' || activeCategoryFilter || selectedPill !== 'all') && (
+                {(searchQuery || selectedSessionFilter !== 'all' || activeCategoryFilter || selectedPill !== 'all') && (
+                  <div className="flex items-center gap-2">
                     <button
                       type="button"
                       onClick={clearAllFilters}
@@ -726,17 +726,8 @@ export const MembersArea: React.FC<MembersAreaProps> = ({ currentUser, onLogout 
                     >
                       Ver Todas
                     </button>
-                  )}
-                  <a
-                    href={VIP_DRIVE_MAIN_URL}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="px-5 py-2.5 rounded-xl bg-[#ff5500] hover:bg-[#ff661a] active:bg-[#e64400] text-white text-xs font-bold tracking-wide transition shadow-lg shadow-[#ff5500]/25 flex items-center justify-center gap-2 cursor-pointer select-none shrink-0"
-                  >
-                    <span>Pasta Completa no Google Drive</span>
-                    <ExternalLink className="w-4 h-4 stroke-[2.5]" />
-                  </a>
-                </div>
+                  </div>
+                )}
               </div>
 
               {(searchQuery || selectedSessionFilter !== 'all' || activeCategoryFilter || selectedPill !== 'all') && (

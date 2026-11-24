@@ -240,7 +240,8 @@ function getFallbackGroup(cleanPath: string): FallbackGroup | null {
     cleanPath.startsWith('/pocket-pals/') ||
     cleanPath.startsWith('/estadios/') ||
     cleanPath.startsWith('/mascotes/') ||
-    cleanPath.startsWith('/fe3d/')
+    cleanPath.startsWith('/fe3d/') ||
+    cleanPath.startsWith('/pokemon_mesa/')
   ) {
     return 'other';
   }
