@@ -1,69 +1,101 @@
 @import "tailwindcss";
 
-@theme {
-  --font-sans: 'Montserrat', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-  --font-montserrat: 'Montserrat', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+html {
+  scroll-behavior: smooth;
+  -webkit-tap-highlight-color: transparent;
+  text-size-adjust: 100%;
 }
 
-@layer base {
-  html, body {
-    font-family: 'Montserrat', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-    background-color: #0b0c0e; /* Fundo Preto Profundo no Tema Preto & Laranja */
-    color: #FFFFFF;
-    -webkit-font-smoothing: antialiased;
-    -moz-osx-font-smoothing: grayscale;
-    text-rendering: optimizeLegibility;
-    letter-spacing: -0.01em;
-  }
+body {
+  background-color: #000000;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  overflow-x: hidden;
+}
 
-  ::selection {
-    background-color: #ff6600;
-    color: #ffffff;
-  }
+/* Optimize touch events for instantaneous 0ms response on mobile */
+a, button {
+  touch-action: manipulation;
+}
 
-  /* Letras da área de membros na fonte Montserrat: bem visíveis e fáceis de ler */
-  body, p, span, div, a, button, input, select, textarea, label, li, td, th {
-    font-family: 'Montserrat', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-  }
+/* Hide scrollbar for Chrome, Safari and Opera */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
 
-  /* Títulos com excelente peso, contraste e legibilidade */
-  h1, h2, h3, h4, h5, h6, strong, b {
-    font-family: 'Montserrat', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-    font-weight: 800;
-    letter-spacing: -0.015em;
-  }
+/* Hide scrollbar for IE, Edge and Firefox */
+.no-scrollbar {
+  -ms-overflow-style: none;  /* IE and Edge */
+  scrollbar-width: none;  /* Firefox */
+  -webkit-overflow-scrolling: touch;
+}
 
-  button, input, select, textarea {
-    font-family: 'Montserrat', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+/* GPU Hardware Acceleration for smooth 60/120fps scrolling on mobile */
+.gpu-layer {
+  transform: translate3d(0, 0, 0);
+  backface-visibility: hidden;
+}
+
+.marquee-track {
+  will-change: transform;
+}
+
+/* Safe section isolation without hiding lazy carousel/marquee images */
+.perf-section {
+  contain: layout style;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .marquee-track {
+    animation-play-state: paused !important;
   }
 }
 
-@layer utilities {
-  .font-montserrat {
-    font-family: 'Montserrat', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+@keyframes marquee-left {
+  0% {
+    transform: translate3d(0, 0, 0);
   }
-  .font-cinzel {
-    font-family: 'Cinzel', serif, ui-serif, Georgia;
-    font-weight: 800;
-  }
-  .font-mono {
-    font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
-    font-weight: 600;
+  100% {
+    transform: translate3d(-50%, 0, 0);
   }
 }
 
-/* Scrollbar no estilo preto e laranja */
-::-webkit-scrollbar {
-  width: 7px;
-  height: 7px;
+@keyframes marquee-right {
+  0% {
+    transform: translate3d(-50%, 0, 0);
+  }
+  100% {
+    transform: translate3d(0, 0, 0);
+  }
 }
-::-webkit-scrollbar-track {
-  background: #0b0c0e;
+
+@keyframes modal-fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
 }
-::-webkit-scrollbar-thumb {
-  background: #262933;
-  border-radius: 4px;
+
+@keyframes modal-scale-in {
+  from {
+    opacity: 0;
+    transform: scale(0.92) translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
 }
-::-webkit-scrollbar-thumb:hover {
-  background: #ff6600;
+
+.animate-modal-backdrop {
+  animation: modal-fade-in 0.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
+
+.animate-modal-card {
+  animation: modal-scale-in 0.22s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  will-change: transform, opacity;
+}
+
