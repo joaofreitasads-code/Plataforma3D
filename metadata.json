@@ -1,6 +1,6 @@
 {
-  "name": "Central Prime 3D",
-  "description": "Biblioteca minerada de modelos 3D prontos para imprimir e vender na Shopee e Mercado Livre.",
+  "name": "Universo 3D - Área de Membros VIP",
+  "description": "Plataforma Universo 3D com acervo completo de 87 Funkos STL, Lego 500%, Pokémon, Mascotes e mais de 150.000 modelos para impressão 3D.",
   "requestFramePermissions": [],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
 }

